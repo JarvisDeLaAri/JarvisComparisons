@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Search Options — OpenClaw</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    padding: 40px 20px;
+  }
+  h1 { text-align: center; font-size: 26px; color: #fff; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-size: 13px; }
+
+  .cards {
+    display: flex;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .card {
+    flex: 1;
+    min-width: 320px;
+    max-width: 370px;
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-current {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #2a3a5c;
+  }
+  .card-voyage {
+    background: linear-gradient(135deg, #1a2a1e, #162e1e);
+    border: 1px solid #2a5c3a;
+  }
+  .card-local {
+    background: linear-gradient(135deg, #2a1a1e, #2e1620);
+    border: 1px solid #5c2a3a;
+  }
+
+  .card-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .card-current .card-badge { background: #2a3a5c; color: #6cb4ee; }
+  .card-voyage .card-badge { background: #2a5c3a; color: #6cd4a0; }
+  .card-local .card-badge { background: #5c2a3a; color: #ee6c8c; }
+
+  .card h2 {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .card-current h2 { color: #6cb4ee; }
+  .card-voyage h2 { color: #6cd4a0; }
+  .card-local h2 { color: #ee6c8c; }
+
+  .card-desc {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .spec-list { list-style: none; }
+  .spec-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .spec-list li:last-child { border-bottom: none; }
+  .spec-label { color: #888; }
+  .spec-value { font-weight: 600; text-align: right; max-width: 55%; }
+  
+  .card-current .spec-value { color: #8ac4f0; }
+  .card-voyage .spec-value { color: #8ce4b8; }
+  .card-local .spec-value { color: #f08ca0; }
+
+  .tag-good {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-green { background: #1a3a2a; color: #6cd4a0; }
+  .tag-yellow { background: #3a3a1a; color: #d4c46c; }
+  .tag-red { background: #3a1a1a; color: #d46c6c; }
+  .tag-blue { background: #1a2a3a; color: #6cb4ee; }
+
+  .pros-cons {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .pros-cons h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .pros h3 { color: #6cd4a0; }
+  .cons h3 { color: #d46c6c; }
+
+  .pros-cons ul {
+    list-style: none;
+    font-size: 12px;
+    color: #bbb;
+    line-height: 1.8;
+  }
+  .pros-cons ul li::before { margin-right: 6px; }
+  .pros ul li::before { content: "✅"; }
+  .cons ul li::before { content: "❌"; }
+
+  /* How it works section */
+  .how-section {
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding: 28px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #12101e, #0e0c18);
+    border: 1px solid #2a2040;
+  }
+  .how-section h2 {
+    color: #d0a0ff;
+    font-size: 18px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .how-box {
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .how-box h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #d0a0ff;
+  }
+  .how-box p {
+    font-size: 12px;
+    color: #999;
+    line-height: 1.6;
+  }
+  .how-box code {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 11px;
+    color: #c8a0ff;
+    background: #1a1030;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* Verdict */
+  .verdict {
+    max-width: 1200px;
+    margin: 30px auto 0;
+    padding: 24px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1a2a1e, #0e1a10);
+    border: 1px solid #2a5c3a;
+    text-align: center;
+  }
+  .verdict h2 { color: #6cd4a0; font-size: 18px; margin-bottom: 10px; }
+  .verdict p { color: #aaa; font-size: 13px; line-height: 1.7; max-width: 700px; margin: 0 auto; }
+  .verdict strong { color: #6cd4a0; }
+</style>
+</head>
+<body>
+
+<h1>🦞 Memory Search: How Should Jarvis Remember?</h1>
+<p class="subtitle">Comparing three approaches to searching memory files</p>
+
+<div class="cards">
+
+  <!-- CURRENT -->
+  <div class="card card-current">
+    <div class="card-badge">Current Setup</div>
+    <h2>📝 Keyword / Fuzzy Match</h2>
+    <p class="card-desc">Plain text search across markdown files. What we're using now via <code>memory_search</code>.</p>
+    
+    <ul class="spec-list">
+      <li><span class="spec-label">Search type</span><span class="spec-value">Keyword matching</span></li>
+      <li><span class="spec-label">Cost</span><span class="spec-value"><span class="tag-good tag-green">Free</span></span></li>
+      <li><span class="spec-label">External API</span><span class="spec-value"><span class="tag-good tag-green">None</span></span></li>
+      <li><span class="spec-label">Setup</span><span class="spec-value"><span class="tag-good tag-green">Zero</span></span></li>
+      <li><span class="spec-label">Disk usage</span><span class="spec-value">~0 (just .md files)</span></li>
+      <li><span class="spec-label">RAM usage</span><span class="spec-value">Negligible</span></li>
+      <li><span class="spec-label">Finds "crustacean" for "lobster"?</span><span class="spec-value"><span class="tag-good tag-red">No</span></span></li>
+      <li><span class="spec-label">Scales to 1000+ files</span><span class="spec-value"><span class="tag-good tag-yellow">Slowly</span></span></li>
+    </ul>
+
+    <div class="pros-cons pros">
+      <h3>Pros</h3>
+      <ul>
+        <li>Zero cost, zero setup, zero dependencies</li>
+        <li>Works fine at our current scale (~10 files)</li>
+        <li>No external calls = no latency, no failures</li>
+      </ul>
+    </div>
+    <div class="pros-cons cons">
+      <h3>Cons</h3>
+      <ul>
+        <li>Can't find things by meaning, only exact words</li>
+        <li>Gets noisy as files grow</li>
+        <li>Misses relevant results if wording differs</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- VOYAGE AI -->
+  <div class="card card-voyage">
+    <div class="card-badge">OpenClaw Built-in</div>
+    <h2>🌐 Voyage AI Embeddings</h2>
+    <p class="card-desc">Cloud API embeddings stored in SQLite. OpenClaw's native QMD memory system.</p>
+    
+    <ul class="spec-list">
+      <li><span class="spec-label">Search type</span><span class="spec-value">Semantic (meaning)</span></li>
+      <li><span class="spec-label">Cost</span><span class="spec-value"><span class="tag-good tag-yellow">~$0.10/M tokens</span></span></li>
+      <li><span class="spec-label">External API</span><span class="spec-value"><span class="tag-good tag-red">Voyage AI</span></span></li>
+      <li><span class="spec-label">Setup</span><span class="spec-value">API key + config</span></li>
+      <li><span class="spec-label">Disk usage</span><span class="spec-value">~1-5 MB (SQLite)</span></li>
+      <li><span class="spec-label">RAM usage</span><span class="spec-value">Low (SQLite only)</span></li>
+      <li><span class="spec-label">Finds "crustacean" for "lobster"?</span><span class="spec-value"><span class="tag-good tag-green">Yes</span></span></li>
+      <li><span class="spec-label">Scales to 1000+ files</span><span class="spec-value"><span class="tag-good tag-green">Easily</span></span></li>
+    </ul>
+
+    <div class="pros-cons pros">
+      <h3>Pros</h3>
+      <ul>
+        <li>Already built into OpenClaw — just add config</li>
+        <li>High quality embeddings (Voyage AI is top-tier)</li>
+        <li>Minimal resource usage on our server</li>
+        <li>Automatic re-indexing when files change</li>
+      </ul>
+    </div>
+    <div class="pros-cons cons">
+      <h3>Cons</h3>
+      <ul>
+        <li>Paid API (cheap but still a dependency)</li>
+        <li>External service = can go down</li>
+        <li>Latency on each embedding call</li>
+        <li>Breaks "free tools only" rule</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- LOCAL FASTEMBED -->
+  <div class="card card-local">
+    <div class="card-badge">LocalGPT Approach</div>
+    <h2>🏠 Local Embeddings (fastembed)</h2>
+    <p class="card-desc">Run embedding model locally via ONNX. What LocalGPT uses. JS version exists.</p>
+    
+    <ul class="spec-list">
+      <li><span class="spec-label">Search type</span><span class="spec-value">Semantic (meaning)</span></li>
+      <li><span class="spec-label">Cost</span><span class="spec-value"><span class="tag-good tag-green">Free forever</span></span></li>
+      <li><span class="spec-label">External API</span><span class="spec-value"><span class="tag-good tag-green">None</span></span></li>
+      <li><span class="spec-label">Setup</span><span class="spec-value">npm install + config</span></li>
+      <li><span class="spec-label">Disk usage</span><span class="spec-value">~33 MB (model) + SQLite</span></li>
+      <li><span class="spec-label">RAM usage</span><span class="spec-value">~100-200 MB during indexing</span></li>
+      <li><span class="spec-label">Finds "crustacean" for "lobster"?</span><span class="spec-value"><span class="tag-good tag-green">Yes</span></span></li>
+      <li><span class="spec-label">Scales to 1000+ files</span><span class="spec-value"><span class="tag-good tag-green">Easily</span></span></li>
+    </ul>
+
+    <div class="pros-cons pros">
+      <h3>Pros</h3>
+      <ul>
+        <li>Completely free — no API key, no cloud</li>
+        <li>Works offline — no external dependency</li>
+        <li>Fast — ONNX quantized models on CPU</li>
+        <li>Node.js library exists (fastembed-js)</li>
+        <li>Better than OpenAI Ada-002 on benchmarks</li>
+      </ul>
+    </div>
+    <div class="pros-cons cons">
+      <h3>Cons</h3>
+      <ul>
+        <li>Not built into OpenClaw (custom integration needed)</li>
+        <li>33MB model download on first run</li>
+        <li>CPU spikes during indexing (~100-200MB RAM)</li>
+        <li>Slightly lower quality than Voyage AI</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- How It Works -->
+<div class="how-section">
+  <h2>🔬 How Local Embeddings Work</h2>
+  <div class="how-grid">
+    <div class="how-box">
+      <h3>1. The Model</h3>
+      <p>A small neural network (<code>bge-small-en-v1.5</code>, 33MB) converts text into a vector — an array of 384 numbers that represent the text's <strong>meaning</strong>, not its words.</p>
+    </div>
+    <div class="how-box">
+      <h3>2. ONNX Runtime</h3>
+      <p>The model runs via <code>ONNX Runtime</code> — an optimized inference engine that works on CPU. No GPU required. Quantized weights make it fast and small.</p>
+    </div>
+    <div class="how-box">
+      <h3>3. Indexing</h3>
+      <p>Each memory file gets chunked into paragraphs. Each chunk becomes a vector stored in <code>sqlite-vec</code>. One-time cost per file, re-indexed on change.</p>
+    </div>
+    <div class="how-box">
+      <h3>4. Searching</h3>
+      <p>Your query becomes a vector too. <code>sqlite-vec</code> finds the closest vectors by cosine similarity. "That time we broke something" → finds NVIDIA NIM disaster without the exact words.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Verdict -->
+<div class="verdict">
+  <h2>🦞 Verdict</h2>
+  <p>
+    <strong>Right now:</strong> Current keyword search works fine — we have ~10 memory files.<br><br>
+    <strong>When we scale:</strong> Local embeddings (fastembed) is the best fit — free, offline, good quality, and a Node.js library exists. 
+    The blocker is that OpenClaw's QMD system expects Voyage AI, so we'd need either a custom integration or wait for OpenClaw to support local embedding providers.<br><br>
+    <strong>Quick win:</strong> Voyage AI — just add a config key and it works today. Cost is negligible (~$0.10/M tokens). 
+    If the "free tools only" rule is flexible for infrastructure, this is the fastest path.
+  </p>
+</div>
+
+</body>
+</html>
