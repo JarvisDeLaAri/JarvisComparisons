@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full IDS vs Lightweight Stack — OSSEC/Wazuh vs AIDE+psad+auditd</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    padding: 40px 20px;
+  }
+  h1 { text-align: center; font-size: 26px; color: #fff; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-size: 13px; }
+
+  .cards {
+    display: flex;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .card {
+    flex: 1;
+    min-width: 340px;
+    max-width: 500px;
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-heavy {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #2a3a5c;
+  }
+  .card-light {
+    background: linear-gradient(135deg, #1a2a1e, #162e1e);
+    border: 1px solid #2a5c3a;
+  }
+
+  .card-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .card-heavy .card-badge { background: #2a3a5c; color: #6cb4ee; }
+  .card-light .card-badge { background: #2a5c3a; color: #6cd4a0; }
+
+  .card h2 { font-size: 20px; margin-bottom: 4px; }
+  .card-heavy h2 { color: #6cb4ee; }
+  .card-light h2 { color: #6cd4a0; }
+
+  .card-desc {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .spec-list { list-style: none; }
+  .spec-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .spec-list li:last-child { border-bottom: none; }
+  .spec-label { color: #999; flex-shrink: 0; }
+  .spec-value { color: #fff; text-align: right; font-weight: 600; }
+
+  .section-title {
+    text-align: center;
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .section-sub {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+
+  /* Feature comparison table */
+  .cmp-table {
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    border-collapse: collapse;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .cmp-table th, .cmp-table td {
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .cmp-table th {
+    background: #111827;
+    color: #999;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .cmp-table th:nth-child(2) { color: #6cb4ee; }
+  .cmp-table th:nth-child(3) { color: #6cd4a0; }
+  .cmp-table td { background: #0f1524; }
+  .cmp-table tr:hover td { background: #131a2e; }
+  .cmp-table td:first-child { color: #ccc; font-weight: 500; }
+  .cmp-table td:nth-child(2),
+  .cmp-table td:nth-child(3) { text-align: center; font-size: 14px; }
+
+  /* Best-for cards */
+  .best-cards {
+    display: flex;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .best-card {
+    flex: 1;
+    min-width: 340px;
+    max-width: 500px;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .best-heavy {
+    background: linear-gradient(135deg, #121828, #0f1a30);
+    border: 1px solid #1e2d4a;
+  }
+  .best-light {
+    background: linear-gradient(135deg, #12281a, #0f301a);
+    border: 1px solid #1e4a2d;
+  }
+  .best-card h3 { font-size: 15px; margin-bottom: 12px; }
+  .best-heavy h3 { color: #6cb4ee; }
+  .best-light h3 { color: #6cd4a0; }
+  .best-card ul { list-style: none; }
+  .best-card ul li {
+    padding: 6px 0;
+    font-size: 13px;
+    color: #bbb;
+    line-height: 1.5;
+  }
+  .best-card ul li::before { margin-right: 8px; }
+
+  .verdict {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 32px;
+    background: linear-gradient(135deg, #141420, #1a1428);
+    border: 1px solid #2a2440;
+    border-radius: 16px;
+  }
+  .verdict h3 { color: #c9a0ff; font-size: 16px; margin-bottom: 10px; }
+  .verdict p { color: #999; font-size: 13px; line-height: 1.7; }
+
+  .note {
+    max-width: 1100px;
+    margin: 24px auto 0;
+    text-align: center;
+    font-size: 11px;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+
+<h1>Full IDS vs Lightweight Stack</h1>
+<p class="subtitle">OSSEC/Wazuh vs AIDE + psad + journald + auditd — which approach fits your server?</p>
+
+<!-- ─── Resource Usage ──────────────────────────── -->
+
+<p class="section-title">📊 Resource Usage</p>
+<p class="section-sub">Typical footprint on a single Linux host</p>
+
+<div class="cards">
+
+  <div class="card card-heavy">
+    <span class="card-badge">Full Platform</span>
+    <h2>OSSEC / Wazuh</h2>
+    <p class="card-desc">All-in-one HIDS with manager, agents, optional Elastic stack and dashboard.</p>
+    <ul class="spec-list">
+      <li><span class="spec-label">Disk (manager + stack)</span><span class="spec-value">2 – 10 GB</span></li>
+      <li><span class="spec-label">Disk (agent only)</span><span class="spec-value">~120 MB</span></li>
+      <li><span class="spec-label">RAM (manager + Elastic)</span><span class="spec-value">2 – 4 GB+</span></li>
+      <li><span class="spec-label">RAM (agent only)</span><span class="spec-value">60 – 120 MB</span></li>
+      <li><span class="spec-label">CPU idle</span><span class="spec-value">3 – 8 %</span></li>
+      <li><span class="spec-label">External deps</span><span class="spec-value">Elasticsearch, Kibana / Dashboard</span></li>
+      <li><span class="spec-label">Network</span><span class="spec-value">Agent ↔ Manager (1514/tcp)</span></li>
+    </ul>
+  </div>
+
+  <div class="card card-light">
+    <span class="card-badge">Lightweight Stack</span>
+    <h2>AIDE + psad + auditd + journald</h2>
+    <p class="card-desc">Individual tools composed together; no central manager required.</p>
+    <ul class="spec-list">
+      <li><span class="spec-label">Disk (all tools)</span><span class="spec-value">15 – 40 MB</span></li>
+      <li><span class="spec-label">AIDE database</span><span class="spec-value">5 – 50 MB</span></li>
+      <li><span class="spec-label">RAM (combined)</span><span class="spec-value">20 – 60 MB</span></li>
+      <li><span class="spec-label">CPU idle</span><span class="spec-value">&lt; 1 %</span></li>
+      <li><span class="spec-label">CPU (AIDE scan)</span><span class="spec-value">Spike during cron scan</span></li>
+      <li><span class="spec-label">External deps</span><span class="spec-value">None</span></li>
+      <li><span class="spec-label">Network</span><span class="spec-value">None (local only)</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ─── Feature Comparison ──────────────────────── -->
+
+<p class="section-title">⚙️ Feature Comparison</p>
+<p class="section-sub">Capability matrix across both approaches</p>
+
+<table class="cmp-table">
+  <tr>
+    <th>Feature</th>
+    <th>OSSEC / Wazuh</th>
+    <th>AIDE + psad + auditd</th>
+  </tr>
+  <tr>
+    <td>File integrity monitoring</td>
+    <td>✅ Real-time (inotify)</td>
+    <td>✅ Cron-based (AIDE)</td>
+  </tr>
+  <tr>
+    <td>Log analysis &amp; correlation</td>
+    <td>✅ Built-in rule engine</td>
+    <td>🟡 Manual (journalctl + grep/scripts)</td>
+  </tr>
+  <tr>
+    <td>Rootkit detection</td>
+    <td>✅ Built-in (rootcheck)</td>
+    <td>❌ Needs rkhunter/chkrootkit</td>
+  </tr>
+  <tr>
+    <td>Active response (auto-block)</td>
+    <td>✅ Firewall-drop, scripts</td>
+    <td>✅ psad auto-blocks via iptables</td>
+  </tr>
+  <tr>
+    <td>Port scan detection</td>
+    <td>🟡 Via log rules only</td>
+    <td>✅ psad (dedicated, iptables log)</td>
+  </tr>
+  <tr>
+    <td>Syscall auditing</td>
+    <td>✅ Integrates with auditd</td>
+    <td>✅ Native auditd</td>
+  </tr>
+  <tr>
+    <td>Centralized multi-host</td>
+    <td>✅ Manager/agent architecture</td>
+    <td>❌ Per-host only</td>
+  </tr>
+  <tr>
+    <td>Web dashboard</td>
+    <td>✅ Wazuh Dashboard / Kibana</td>
+    <td>❌ CLI / email only</td>
+  </tr>
+  <tr>
+    <td>Compliance (PCI, HIPAA, CIS)</td>
+    <td>✅ Built-in modules &amp; SCA</td>
+    <td>🟡 Manual audit rules</td>
+  </tr>
+  <tr>
+    <td>Vulnerability detection</td>
+    <td>✅ CVE scanning (Wazuh)</td>
+    <td>❌ Not included</td>
+  </tr>
+  <tr>
+    <td>Email alerting</td>
+    <td>✅ Built-in</td>
+    <td>✅ psad + cron + mail</td>
+  </tr>
+  <tr>
+    <td>API / integrations</td>
+    <td>✅ REST API, SIEM export</td>
+    <td>❌ Script it yourself</td>
+  </tr>
+</table>
+
+<!-- ─── Setup Complexity ────────────────────────── -->
+
+<p class="section-title">🛠️ Setup Complexity</p>
+<p class="section-sub">How much work to get running and keep running</p>
+
+<table class="cmp-table">
+  <tr>
+    <th>Aspect</th>
+    <th>OSSEC / Wazuh</th>
+    <th>AIDE + psad + auditd</th>
+  </tr>
+  <tr>
+    <td>Install time</td>
+    <td>30 – 90 min (full stack)</td>
+    <td>5 – 15 min (apt install)</td>
+  </tr>
+  <tr>
+    <td>Config effort</td>
+    <td>Medium-High — XML configs, rules tuning, agent enrollment</td>
+    <td>Low-Medium — individual config files, straightforward</td>
+  </tr>
+  <tr>
+    <td>Learning curve</td>
+    <td>Steep — large documentation, many concepts</td>
+    <td>Gentle — each tool is small and focused</td>
+  </tr>
+  <tr>
+    <td>Maintenance burden</td>
+    <td>High — Elastic upgrades, index management, agent updates</td>
+    <td>Low — occasional AIDE db rebuild, log rotation</td>
+  </tr>
+  <tr>
+    <td>Upgrades</td>
+    <td>Coordinated (manager + agents + Elastic)</td>
+    <td>Independent per package</td>
+  </tr>
+  <tr>
+    <td>Debugging</td>
+    <td>Complex — multiple moving parts</td>
+    <td>Simple — standard Linux tools</td>
+  </tr>
+</table>
+
+<!-- ─── Best For ────────────────────────────────── -->
+
+<p class="section-title">🎯 Best For</p>
+<p class="section-sub">When to pick each approach</p>
+
+<div class="best-cards">
+
+  <div class="best-card best-heavy">
+    <h3>🔷 Choose OSSEC / Wazuh when…</h3>
+    <ul>
+      <li>▸ Managing 5+ servers that need centralized visibility</li>
+      <li>▸ Compliance frameworks require audit trails &amp; dashboards</li>
+      <li>▸ You need real-time FIM, not cron-based checks</li>
+      <li>▸ Team needs a web UI for investigation &amp; alerts</li>
+      <li>▸ Vulnerability scanning is part of your workflow</li>
+      <li>▸ You have the RAM &amp; disk budget (≥ 4 GB RAM for stack)</li>
+      <li>▸ Integration with SIEM / SOC tooling is required</li>
+    </ul>
+  </div>
+
+  <div class="best-card best-light">
+    <h3>🟢 Choose AIDE + psad + auditd when…</h3>
+    <ul>
+      <li>▸ Running 1 – 3 servers or a personal VPS</li>
+      <li>▸ RAM is tight (512 MB – 2 GB boxes)</li>
+      <li>▸ You want IDS basics without operational overhead</li>
+      <li>▸ "Good enough" detection with minimal attack surface</li>
+      <li>▸ You prefer Unix philosophy — small tools, composed</li>
+      <li>▸ No compliance dashboard requirements</li>
+      <li>▸ You're comfortable with CLI and cron-based workflows</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ─── Verdict ──────────────────────────────────── -->
+
+<div class="verdict">
+  <h3>💡 Bottom Line</h3>
+  <p>
+    Wazuh is the right choice when you need a <strong>unified security platform</strong> with dashboards, compliance, and multi-host management.
+    The lightweight stack wins when you want <strong>solid detection with near-zero overhead</strong> — it covers file integrity (AIDE),
+    port scans (psad), syscall auditing (auditd), and log monitoring (journald) with ~40 MB RAM total.
+    For a single VPS, the lightweight stack gives you 80% of the value at 5% of the resource cost.
+  </p>
+</div>
+
+<p class="note">Resource figures based on Wazuh 4.x docs, Elastic 8.x requirements, and Debian/Ubuntu package sizes. Actual usage varies by workload.</p>
+
+</body>
+</html>
