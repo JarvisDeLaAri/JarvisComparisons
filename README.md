@@ -15,6 +15,9 @@ Three approaches to searching AI memory files — keyword matching (current), Vo
 ### 3. [Full IDS vs Lightweight Stack](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/ids-comparison.html)
 OSSEC/Wazuh (full IDS platform) vs the lightweight combo of AIDE + psad + auditd. Resource usage, features, setup complexity, and when to use each.
 
+### 4. [OpenClaw Security Architecture Deep Dive](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/openclaw-sandboxing-deep-dive.html)
+Gateway vs Main Agent vs Sub-Agent — full comparison of trust levels, Docker's 48 blocked syscalls mapped to OpenClaw impact, and what the community says about restricting AI agents.
+
 ---
 
 ## Style Guide

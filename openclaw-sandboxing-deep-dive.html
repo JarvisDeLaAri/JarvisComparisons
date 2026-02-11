@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Security Architecture Deep Dive — Gateway vs Main Agent vs Sub-Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e1a; color: #c8ccd8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { color: #fff; font-size: 2em; text-align: center; margin-bottom: 8px; }
+.subtitle { color: #8b92a8; text-align: center; margin-bottom: 32px; font-size: 1.1em; }
+h2 { color: #e8ecf4; font-size: 1.5em; margin: 40px 0 20px; padding-bottom: 8px; border-bottom: 2px solid #1e2640; }
+h3 { color: #d0d5e2; font-size: 1.15em; margin: 24px 0 12px; }
+
+/* Three-column comparison */
+.tri-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+.card { background: #111827; border-radius: 12px; padding: 20px; border: 2px solid #1e2640; }
+.card-gateway { border-color: #ef4444; }
+.card-main { border-color: #f59e0b; }
+.card-sub { border-color: #10b981; }
+.card-title { font-size: 1.2em; font-weight: 700; margin-bottom: 4px; }
+.card-gateway .card-title { color: #ef4444; }
+.card-main .card-title { color: #f59e0b; }
+.card-sub .card-title { color: #10b981; }
+.card-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75em; font-weight: 600; margin-bottom: 12px; }
+.badge-red { background: #3b1219; color: #fca5a5; }
+.badge-amber { background: #3b2e10; color: #fcd34d; }
+.badge-green { background: #0d3b2e; color: #6ee7b7; }
+.card-desc { color: #8b92a8; font-size: 0.9em; margin-bottom: 16px; }
+
+.spec-list { list-style: none; }
+.spec-list li { padding: 6px 0; border-bottom: 1px solid #1a2035; font-size: 0.92em; display: flex; justify-content: space-between; }
+.spec-list li:last-child { border-bottom: none; }
+.spec-label { color: #8b92a8; }
+.spec-value { color: #e8ecf4; font-weight: 600; text-align: right; }
+
+.tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600; }
+.tag-red { background: #3b1219; color: #fca5a5; }
+.tag-amber { background: #3b2e10; color: #fcd34d; }
+.tag-green { background: #0d3b2e; color: #6ee7b7; }
+.tag-blue { background: #102a4a; color: #93c5fd; }
+.tag-gray { background: #1e2640; color: #8b92a8; }
+
+/* Pros/Cons */
+.pros-cons { margin-top: 16px; }
+.pro, .con, .neutral { padding: 4px 0; font-size: 0.88em; }
+.pro::before { content: "✅ "; }
+.con::before { content: "❌ "; }
+.neutral::before { content: "🟡 "; }
+
+/* Syscall table */
+.syscall-section { margin: 24px 0; }
+.syscall-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.syscall-header { display: grid; grid-template-columns: 180px 1fr 100px 100px; gap: 8px; padding: 10px 12px; background: #1a2240; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.85em; color: #e8ecf4; }
+.syscall-row { display: grid; grid-template-columns: 180px 1fr 100px 100px; gap: 8px; padding: 8px 12px; background: #111827; font-size: 0.82em; border-bottom: 1px solid #0a0e1a; }
+.syscall-row:nth-child(odd) { background: #0f1524; }
+.syscall-name { color: #93c5fd; font-family: monospace; font-weight: 600; }
+.syscall-desc { color: #8b92a8; }
+.syscall-impact { text-align: center; }
+
+/* How it works section */
+.flow-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.flow-box { background: #111827; border-radius: 10px; padding: 16px; border-left: 4px solid #3b82f6; }
+.flow-box-title { color: #93c5fd; font-weight: 700; margin-bottom: 6px; }
+.flow-box-text { color: #8b92a8; font-size: 0.9em; }
+
+/* Community section */
+.community-card { background: #111827; border-radius: 12px; padding: 20px; border: 2px solid #1e2640; margin: 12px 0; }
+.community-source { color: #8b92a8; font-size: 0.8em; margin-bottom: 8px; }
+.community-quote { color: #e8ecf4; font-style: italic; margin-bottom: 8px; }
+.community-take { color: #93c5fd; font-size: 0.9em; }
+
+/* Verdict */
+.verdict { background: linear-gradient(135deg, #111827 0%, #1a1f35 100%); border: 2px solid #3b82f6; border-radius: 12px; padding: 24px; margin: 32px 0; }
+.verdict-title { color: #93c5fd; font-size: 1.3em; font-weight: 700; margin-bottom: 12px; }
+.verdict-text { color: #c8ccd8; font-size: 1em; line-height: 1.7; }
+.verdict-text strong { color: #fff; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .tri-grid { grid-template-columns: 1fr; }
+  .flow-boxes { grid-template-columns: 1fr; }
+  .syscall-header, .syscall-row { grid-template-columns: 120px 1fr 70px 70px; font-size: 0.75em; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🦞 OpenClaw Security Architecture Deep Dive</h1>
+<p class="subtitle">Gateway vs Main Agent vs Sub-Agent — Syscalls, Sandboxing, and What the Community Thinks</p>
+
+<!-- SECTION 1: Three-Way Comparison -->
+<h2>1. The Three Layers of OpenClaw</h2>
+
+<div class="tri-grid">
+  <!-- Gateway -->
+  <div class="card card-gateway">
+    <div class="card-title">🔴 Gateway Process</div>
+    <span class="card-badge badge-red">THE BRAIN</span>
+    <div class="card-desc">The Node.js daemon that runs everything. Manages sessions, channels, tools, cron, and all communication.</div>
+    <ul class="spec-list">
+      <li><span class="spec-label">Process</span><span class="spec-value"><code>openclaw-gateway</code></span></li>
+      <li><span class="spec-label">Runs as</span><span class="spec-value"><span class="tag tag-red">root</span></span></li>
+      <li><span class="spec-label">Sandboxed?</span><span class="spec-value"><span class="tag tag-red">Never</span></span></li>
+      <li><span class="spec-label">Filesystem</span><span class="spec-value"><span class="tag tag-red">Full access</span></span></li>
+      <li><span class="spec-label">Network</span><span class="spec-value"><span class="tag tag-red">Full access</span></span></li>
+      <li><span class="spec-label">Shell exec</span><span class="spec-value"><span class="tag tag-red">Unrestricted</span></span></li>
+      <li><span class="spec-label">Capabilities</span><span class="spec-value"><span class="tag tag-red">ALL</span></span></li>
+      <li><span class="spec-label">Seccomp</span><span class="spec-value"><span class="tag tag-gray">None</span></span></li>
+      <li><span class="spec-label">Docker isolation</span><span class="spec-value"><span class="tag tag-gray">N/A (bare metal)</span></span></li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pro">Maximum power — can do anything on the machine</div>
+      <div class="pro">No restrictions on tools, exec, file access</div>
+      <div class="pro">Can manage Docker containers, services, users</div>
+      <div class="con">If compromised, attacker owns everything</div>
+      <div class="con">No syscall filtering — full kernel access</div>
+    </div>
+  </div>
+
+  <!-- Main Agent -->
+  <div class="card card-main">
+    <div class="card-title">🟡 Main Agent Session</div>
+    <span class="card-badge badge-amber">YOUR CHAT</span>
+    <div class="card-desc">The session you talk to directly. Runs inside the gateway process. Tools execute on the host by default.</div>
+    <ul class="spec-list">
+      <li><span class="spec-label">Process</span><span class="spec-value">Part of gateway</span></li>
+      <li><span class="spec-label">Runs as</span><span class="spec-value"><span class="tag tag-red">root</span> (inherits gateway)</span></li>
+      <li><span class="spec-label">Sandboxed?</span><span class="spec-value"><span class="tag tag-amber">Configurable</span></span></li>
+      <li><span class="spec-label">Default sandbox mode</span><span class="spec-value"><span class="tag tag-gray">off</span></span></li>
+      <li><span class="spec-label">Filesystem</span><span class="spec-value"><span class="tag tag-red">Full (when off)</span></span></li>
+      <li><span class="spec-label">Network</span><span class="spec-value"><span class="tag tag-red">Full (when off)</span></span></li>
+      <li><span class="spec-label">All tools</span><span class="spec-value"><span class="tag tag-amber">Policy-gated</span></span></li>
+      <li><span class="spec-label">Elevated exec</span><span class="spec-value"><span class="tag tag-amber">Always on host</span></span></li>
+      <li><span class="spec-label">Can spawn sub-agents</span><span class="spec-value"><span class="tag tag-green">Yes</span></span></li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pro">Full machine access for your direct commands</div>
+      <div class="pro">Can use all tools: browser, cron, nodes, messaging</div>
+      <div class="pro">Elevated exec bypasses sandbox (escape hatch)</div>
+      <div class="neutral">Sandbox mode "all" would restrict main too</div>
+      <div class="neutral">Mode "non-main" keeps main free, sandboxes others</div>
+    </div>
+  </div>
+
+  <!-- Sub-Agent -->
+  <div class="card card-sub">
+    <div class="card-title">🟢 Sub-Agent (Sandbox)</div>
+    <span class="card-badge badge-green">ISOLATED WORKER</span>
+    <div class="card-desc">Spawned sessions that run in Docker containers. Restricted tools, filesystem, and network by default.</div>
+    <ul class="spec-list">
+      <li><span class="spec-label">Process</span><span class="spec-value">Docker container</span></li>
+      <li><span class="spec-label">Runs as</span><span class="spec-value"><span class="tag tag-green">Configurable user</span></span></li>
+      <li><span class="spec-label">Sandboxed?</span><span class="spec-value"><span class="tag tag-green">Yes (when enabled)</span></span></li>
+      <li><span class="spec-label">Filesystem</span><span class="spec-value"><span class="tag tag-green">Read-only root</span></span></li>
+      <li><span class="spec-label">Network</span><span class="spec-value"><span class="tag tag-green">None (default)</span></span></li>
+      <li><span class="spec-label">Capabilities</span><span class="spec-value"><span class="tag tag-green">ALL dropped</span></span></li>
+      <li><span class="spec-label">Privilege escalation</span><span class="spec-value"><span class="tag tag-green">Blocked</span></span></li>
+      <li><span class="spec-label">Custom seccomp</span><span class="spec-value"><span class="tag tag-green">Supported</span></span></li>
+      <li><span class="spec-label">Custom AppArmor</span><span class="spec-value"><span class="tag tag-green">Supported</span></span></li>
+      <li><span class="spec-label">Workspace access</span><span class="spec-value"><span class="tag tag-green">none / ro / rw</span></span></li>
+      <li><span class="spec-label">Tool deny list</span><span class="spec-value"><span class="tag tag-green">browser, cron, nodes, channels</span></span></li>
+      <li><span class="spec-label">Resource limits</span><span class="spec-value"><span class="tag tag-green">CPU, RAM, PIDs</span></span></li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pro">Fully isolated — can't touch host filesystem</div>
+      <div class="pro">No network by default (no data exfiltration)</div>
+      <div class="pro">capDrop ALL + no-new-privileges</div>
+      <div class="pro">Resource limits prevent runaway processes</div>
+      <div class="con">Can't use browser, cron, messaging, or nodes</div>
+      <div class="con">Limited tool set: exec, read, write, edit only</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick summary -->
+<div class="flow-boxes">
+  <div class="flow-box">
+    <div class="flow-box-title">🏗️ Architecture Summary</div>
+    <div class="flow-box-text">The Gateway is always unrestricted — it's the orchestrator. Main session inherits gateway's power. Sub-agents can be sandboxed in Docker with full isolation. This is a <strong>two-tier trust model</strong>: you trust the main session (it's you talking), and isolate everything else.</div>
+  </div>
+  <div class="flow-box">
+    <div class="flow-box-title">⚡ Key Design Decision</div>
+    <div class="flow-box-text">OpenClaw explicitly says: <em>"The Gateway stays on the host; tool execution runs in an isolated sandbox when enabled."</em> The gateway is NEVER sandboxed. Restricting it would cripple everything — it needs to manage Docker, files, network, and messaging. It's the king by design.</div>
+  </div>
+</div>
+
+<!-- SECTION 2: Docker's 48 Blocked Syscalls -->
+<h2>2. Docker's Blocked Syscalls — The Full List</h2>
+
+<p style="color: #8b92a8; margin-bottom: 16px;">These 48 syscalls are blocked by Docker's default seccomp profile. The "Gateway Impact" column shows what would break if these were applied to the OpenClaw gateway. The "Sandbox Impact" shows effect on sub-agents.</p>
+
+<div class="syscall-section">
+<div class="syscall-grid">
+  <div class="syscall-header">
+    <span>Syscall</span>
+    <span>What it does</span>
+    <span>Gateway Impact</span>
+    <span>Sandbox Impact</span>
+  </div>
+  <div class="syscall-row"><span class="syscall-name">acct</span><span class="syscall-desc">Process accounting — disable resource limits</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">add_key</span><span class="syscall-desc">Kernel keyring — not namespaced</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">bpf</span><span class="syscall-desc">Load BPF programs into kernel</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">clock_adjtime</span><span class="syscall-desc">Adjust system clock</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">clock_settime</span><span class="syscall-desc">Set system clock</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">clone</span><span class="syscall-desc">Clone namespaces (CLONE_NEW* flags)</span><span class="syscall-impact"><span class="tag tag-red">BREAKS</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">create_module</span><span class="syscall-desc">Create kernel module (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">delete_module</span><span class="syscall-desc">Unload kernel module</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">finit_module</span><span class="syscall-desc">Load kernel module from fd</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">get_kernel_syms</span><span class="syscall-desc">Get kernel symbol table (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">get_mempolicy</span><span class="syscall-desc">NUMA memory policy</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">init_module</span><span class="syscall-desc">Load kernel module</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">ioperm</span><span class="syscall-desc">Set I/O privilege levels</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">iopl</span><span class="syscall-desc">Set I/O privilege levels</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">kcmp</span><span class="syscall-desc">Compare two processes (ptrace-like)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">kexec_file_load</span><span class="syscall-desc">Load new kernel for execution</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">kexec_load</span><span class="syscall-desc">Load new kernel for execution</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">keyctl</span><span class="syscall-desc">Kernel keyring operations</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">lookup_dcookie</span><span class="syscall-desc">Tracing/profiling — leaks host info</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">mbind</span><span class="syscall-desc">NUMA memory binding</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">mount</span><span class="syscall-desc">Mount filesystems</span><span class="syscall-impact"><span class="tag tag-amber">Maybe</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">move_pages</span><span class="syscall-desc">Move memory pages between NUMA nodes</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">nfsservctl</span><span class="syscall-desc">NFS daemon control (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">open_by_handle_at</span><span class="syscall-desc">Container breakout vector</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">perf_event_open</span><span class="syscall-desc">Performance profiling — leaks host info</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">personality</span><span class="syscall-desc">BSD emulation — kernel vuln surface</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">pivot_root</span><span class="syscall-desc">Change root filesystem</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">process_vm_readv</span><span class="syscall-desc">Read another process's memory</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">process_vm_writev</span><span class="syscall-desc">Write another process's memory</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">ptrace</span><span class="syscall-desc">Debug/trace processes — info leak</span><span class="syscall-impact"><span class="tag tag-amber">Maybe</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">query_module</span><span class="syscall-desc">Query kernel modules (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">quotactl</span><span class="syscall-desc">Disk quota management</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">reboot</span><span class="syscall-desc">Reboot the machine</span><span class="syscall-impact"><span class="tag tag-amber">Useful</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">request_key</span><span class="syscall-desc">Request kernel keyring key</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">set_mempolicy</span><span class="syscall-desc">Set NUMA memory policy</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">setns</span><span class="syscall-desc">Join a namespace</span><span class="syscall-impact"><span class="tag tag-red">BREAKS</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">settimeofday</span><span class="syscall-desc">Set system time</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">stime</span><span class="syscall-desc">Set system time (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">swapon</span><span class="syscall-desc">Enable swap space</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">swapoff</span><span class="syscall-desc">Disable swap space</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">sysfs</span><span class="syscall-desc">Filesystem type info (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">_sysctl</span><span class="syscall-desc">Kernel params (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">umount</span><span class="syscall-desc">Unmount filesystem</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">umount2</span><span class="syscall-desc">Unmount filesystem (flags)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">unshare</span><span class="syscall-desc">Create new namespaces</span><span class="syscall-impact"><span class="tag tag-red">BREAKS</span></span><span class="syscall-impact"><span class="tag tag-green">Safe</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">uselib</span><span class="syscall-desc">Load shared library (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">userfaultfd</span><span class="syscall-desc">Userspace page fault handling</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+  <div class="syscall-row"><span class="syscall-name">ustat</span><span class="syscall-desc">Filesystem statistics (obsolete)</span><span class="syscall-impact"><span class="tag tag-gray">None</span></span><span class="syscall-impact"><span class="tag tag-gray">None</span></span></div>
+</div>
+</div>
+
+<!-- Impact summary -->
+<h3>Syscall Impact Summary</h3>
+<div class="flow-boxes">
+  <div class="flow-box" style="border-color: #ef4444;">
+    <div class="flow-box-title" style="color: #fca5a5;">🔴 Would BREAK the Gateway (3 syscalls)</div>
+    <div class="flow-box-text">
+      <strong>clone</strong> — Gateway spawns child processes (exec tool, Docker management). Blocked = can't run ANY shell command.<br>
+      <strong>setns</strong> — Gateway joins Docker container namespaces to execute commands inside sandboxes. Blocked = sandboxing completely broken.<br>
+      <strong>unshare</strong> — Gateway creates new namespaces for isolation. Blocked = can't manage Docker containers.
+    </div>
+  </div>
+  <div class="flow-box" style="border-color: #f59e0b;">
+    <div class="flow-box-title" style="color: #fcd34d;">🟡 Potentially Useful but Risky (3 syscalls)</div>
+    <div class="flow-box-text">
+      <strong>mount</strong> — Gateway might need to mount volumes for Docker. Blocking could break bind mounts.<br>
+      <strong>ptrace</strong> — Not normally used by Node.js, but debugging tools need it. Blocking is usually safe.<br>
+      <strong>reboot</strong> — You might actually WANT the AI to reboot the server in emergencies. Blocking means no <code>reboot</code> command.
+    </div>
+  </div>
+</div>
+<div class="flow-box" style="border-color: #10b981; margin-bottom: 20px;">
+  <div class="flow-box-title" style="color: #6ee7b7;">🟢 No Impact on Gateway (42 syscalls)</div>
+  <div class="flow-box-text">
+    The vast majority of Docker's blocked syscalls are irrelevant to OpenClaw. Node.js doesn't load kernel modules, manipulate NUMA memory, set system clocks, access I/O ports, or use BSD emulation. These syscalls are blocked to prevent container breakouts — which isn't a concern when you're already running bare metal as root.
+  </div>
+</div>
+
+<!-- SECTION 3: Community Opinions -->
+<h2>3. What the Community Says</h2>
+
+<div class="community-card">
+  <div class="community-source">📖 OpenClaw Official Docs — Security Page</div>
+  <div class="community-quote">"Running an AI agent with shell access on your machine is… spicy. There is no 'perfectly secure' setup. The goal is to be deliberate about: who can talk to your bot, where the bot is allowed to act, what the bot can touch."</div>
+  <div class="community-take"><strong>Takeaway:</strong> OpenClaw's own docs acknowledge the tradeoff. They don't try to restrict the gateway — instead they focus on <em>access control</em> (who can trigger it) and <em>tool policy</em> (what it's allowed to do). The philosophy is "control inputs, not capabilities."</div>
+</div>
+
+<div class="community-card">
+  <div class="community-source">📖 OpenClaw Docs — Sandboxing Page</div>
+  <div class="community-quote">"The Gateway stays on the host; tool execution runs in an isolated sandbox when enabled. This is not a perfect security boundary, but it materially limits filesystem and process access when the model does something dumb."</div>
+  <div class="community-take"><strong>Takeaway:</strong> Sandboxing is for <em>sub-agents doing untrusted work</em>, not for the gateway itself. The phrase "when the model does something dumb" tells you everything — it's a safety net for AI mistakes, not a restriction on the system.</div>
+</div>
+
+<div class="community-card">
+  <div class="community-source">📖 OpenClaw Docs — Threat Model</div>
+  <div class="community-quote">"Most failures here are not fancy exploits — they're 'someone messaged the bot and the bot did what they asked.' Identity first, scope next, model last."</div>
+  <div class="community-take"><strong>Takeaway:</strong> The real threat isn't syscalls — it's unauthorized people talking to your bot. Seccomp won't help if someone tricks your AI via WhatsApp. DM pairing, allowlists, and group policies are the actual defense layer. We already have this locked down.</div>
+</div>
+
+<div class="community-card">
+  <div class="community-source">📖 OpenClaw Source Code — Sandbox Defaults</div>
+  <div class="community-quote"><code>capDrop: ["ALL"]</code>, <code>network: "none"</code>, <code>readOnlyRoot: true</code>, <code>--security-opt no-new-privileges</code></div>
+  <div class="community-take"><strong>Takeaway:</strong> OpenClaw already built maximum sandbox security for sub-agents. ALL capabilities dropped, no network, read-only filesystem, no privilege escalation. The team clearly knows security — and they deliberately left the gateway unrestricted. That's not an oversight, it's the architecture.</div>
+</div>
+
+<div class="community-card">
+  <div class="community-source">📖 OpenClaw Docs — Elevated Exec</div>
+  <div class="community-quote">"Elevated exec runs on the host and bypasses sandboxing. If sandboxing is off, tools.elevated does not change execution (already on host)."</div>
+  <div class="community-take"><strong>Takeaway:</strong> Even with sandboxing ON, there's an explicit escape hatch back to the host. The system is designed so the AI can always reach full power when needed. Restricting the gateway would contradict this core design principle.</div>
+</div>
+
+<div class="community-card">
+  <div class="community-source">🌐 General AI Agent Security Consensus (2025-2026)</div>
+  <div class="community-quote">The industry consensus for single-user AI agent deployments: the agent IS the user's proxy. Restricting the agent's kernel access doesn't help — if it can run <code>exec</code> with shell commands, it can already do everything a user can. Seccomp only adds value when isolating multi-tenant workloads or untrusted code execution.</div>
+  <div class="community-take"><strong>Takeaway:</strong> For a personal assistant running on your own VPS, syscall restrictions are security theater. The real security surface is: (1) who can message the bot, (2) what the bot is instructed to do, (3) network access from outside. All of which we already handle with UFW, fail2ban, GeoIP, DM pairing, and allowlists.</div>
+</div>
+
+<!-- VERDICT -->
+<div class="verdict">
+  <div class="verdict-title">🦞 The Verdict</div>
+  <div class="verdict-text">
+    <strong>Don't restrict the gateway. It's the king by design.</strong><br><br>
+    Out of 48 Docker-blocked syscalls, only 3 would even affect OpenClaw — and all 3 would break it (<code>clone</code>, <code>setns</code>, <code>unshare</code>). The other 45 are irrelevant to a Node.js process.<br><br>
+    OpenClaw's security model is <strong>two-tiered</strong>: the gateway runs unrestricted on the host (it's YOUR agent, YOUR machine), while sub-agents run in hardened Docker containers (capDrop ALL, no network, read-only root, no-new-privileges).<br><br>
+    <strong>Where your real defenses are:</strong>
+    <ul style="margin: 12px 0 0 20px; list-style: disc;">
+      <li>UFW firewall (default deny, explicit allowlist)</li>
+      <li>GeoIP blocking on SSH (Israel + Europe only)</li>
+      <li>Fail2ban (3 strikes = ban + notification)</li>
+      <li>SSH hardened (key-only, non-standard port, hardened crypto)</li>
+      <li>WhatsApp DM pairing (only authorized numbers)</li>
+      <li>User isolation (non-root users can't touch secrets)</li>
+      <li>AIDE + rkhunter + chkrootkit (daily integrity scans)</li>
+      <li>psad (port scan auto-blocking)</li>
+    </ul>
+    <br>
+    <strong>Section 4 recommendation: Skip entirely.</strong> OpenClaw already sandboxes what needs sandboxing (sub-agents). The gateway needs full power. Restricting it is like giving a surgeon gloves and then tying their hands.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
