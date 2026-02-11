@@ -18,6 +18,9 @@ OSSEC/Wazuh (full IDS platform) vs the lightweight combo of AIDE + psad + auditd
 ### 4. [OpenClaw Security Architecture Deep Dive](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/openclaw-sandboxing-deep-dive.html)
 Gateway vs Main Agent vs Sub-Agent — full comparison of trust levels, Docker's 48 blocked syscalls mapped to OpenClaw impact, and what the community says about restricting AI agents.
 
+### 5. [Secrets Management — Plain Files vs Encrypted vs Vault](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/secrets-management-comparison.html)
+Five approaches to managing secrets on a VPS: plain .env + permissions (current), systemd credentials, SOPS+age, HashiCorp Vault, and environment-only. Shows what we already cover (~80%).
+
 ---
 
 ## Style Guide
