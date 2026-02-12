@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tor × OpenClaw — Can an AI Agent Live on the Dark Web?</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    padding: 40px 20px;
+  }
+  h1 { text-align: center; font-size: 26px; color: #fff; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 16px; font-size: 13px; }
+
+  /* Nav button */
+  .nav-btn {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 36px;
+    padding: 8px 20px;
+    background: rgba(108, 180, 238, 0.1);
+    border: 1px solid #2a3a5c;
+    border-radius: 20px;
+    color: #6cb4ee;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(108, 180, 238, 0.2); }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto 48px;
+  }
+  .card {
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-t1 { background: linear-gradient(135deg, #1a1a2e, #1e1630); border: 1px solid #4a2a6c; }
+  .card-t2 { background: linear-gradient(135deg, #1a0a1a, #2e0a2e); border: 1px solid #6c2a4a; }
+  .card-t3 { background: linear-gradient(135deg, #0a1a2a, #0a2e3e); border: 1px solid #2a5c6c; }
+
+  .card-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    width: fit-content;
+  }
+  .card-t1 .card-badge { background: #3a2a5c; color: #b4a0ee; }
+  .card-t2 .card-badge { background: #5c1a3a; color: #ee6ca0; }
+  .card-t3 .card-badge { background: #1a3a5c; color: #6cd4ee; }
+
+  .card h2 { font-size: 18px; margin-bottom: 4px; }
+  .card-t1 h2 { color: #b4a0ee; }
+  .card-t2 h2 { color: #ee6ca0; }
+  .card-t3 h2 { color: #6cd4ee; }
+
+  .card-desc { color: #999; font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+
+  /* Architecture */
+  .arch-box {
+    background: rgba(0,0,0,0.35);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #8899aa;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .card-t1 .arch-box { border: 1px solid #3a2a4a; }
+  .card-t2 .arch-box { border: 1px solid #4a1a3a; }
+  .card-t3 .arch-box { border: 1px solid #1a3a4a; }
+
+  .arch-node {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .node-tor { background: #2a1a3a; color: #b4a0ee; border: 1px solid #5a3a7a; }
+  .node-vps { background: #1a3a2a; color: #6cd4a0; border: 1px solid #3a6a4a; }
+  .node-vpn { background: #1a2a3a; color: #6cb4ee; border: 1px solid #3a5a7a; }
+  .node-api { background: #3a3a1a; color: #eedd6c; border: 1px solid #6a6a3a; }
+  .node-wa { background: #1a3a1a; color: #6cd4a0; border: 1px solid #3a6a3a; }
+  .node-user { background: #2a1a1a; color: #ee9a6c; border: 1px solid #5a3a2a; }
+  .node-dead { background: #3a1a1a; color: #ee6c6c; border: 1px solid #6a2a2a; }
+  .arch-arrow { color: #556; font-size: 14px; margin: 0 4px; }
+  .arch-label { display: block; color: #556; font-size: 10px; margin-top: 6px; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .tag-green { background: #1a3a2a; color: #6cd4a0; }
+  .tag-red { background: #3a1a1a; color: #ee6c6c; }
+  .tag-blue { background: #1a2a3a; color: #6cb4ee; }
+  .tag-yellow { background: #3a3a1a; color: #eedd6c; }
+  .tag-purple { background: #2a1a3a; color: #b4a0ee; }
+
+  /* Metrics */
+  .metrics { margin-bottom: 16px; flex-grow: 1; }
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .metric-label { color: #999; }
+  .metric-value { font-weight: 600; font-size: 12px; }
+
+  .score-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .score-fill { height: 100%; border-radius: 3px; }
+  .fill-green { background: #6cd4a0; }
+  .fill-blue { background: #6cb4ee; }
+  .fill-purple { background: #b4a0ee; }
+  .fill-yellow { background: #eedd6c; }
+  .fill-red { background: #ee6c6c; }
+  .fill-orange { background: #ee9a6c; }
+
+  /* Info tooltip */
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: #888;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: help;
+    position: relative;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .info-icon:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .info-icon .tooltip {
+    display: none;
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1e2e;
+    border: 1px solid #3a3e5c;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 400;
+    color: #ccc;
+    width: 240px;
+    line-height: 1.5;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    text-align: left;
+  }
+  .info-icon:hover .tooltip { display: block; }
+
+  /* Pros/Cons */
+  .pros-cons { font-size: 12px; line-height: 1.8; margin-bottom: 12px; }
+  .pro { color: #6cd4a0; }
+  .con { color: #ee6c6c; }
+  .neutral { color: #eedd6c; }
+
+  /* Verdict */
+  .verdict-box {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-top: auto;
+  }
+  .card-t1 .verdict-box { border: 1px solid #3a2a4a; color: #b4a0ee; }
+  .card-t2 .verdict-box { border: 1px solid #4a1a3a; color: #ee6ca0; }
+  .card-t3 .verdict-box { border: 1px solid #1a3a4a; color: #6cd4ee; }
+
+  /* What breaks section */
+  .breaks-section {
+    max-width: 1400px;
+    margin: 0 auto 48px;
+  }
+  .section-title {
+    text-align: center;
+    color: #fff;
+    font-size: 20px;
+    margin: 48px auto 8px;
+  }
+  .section-sub {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 28px;
+  }
+
+  .break-grid {
+    display: grid;
+    grid-template-columns: auto repeat(3, 1fr);
+    gap: 8px;
+    font-size: 12px;
+  }
+  .break-header {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+  }
+  .break-service {
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    color: #ccc;
+    font-weight: 600;
+  }
+  .break-cell {
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .cell-works { background: rgba(106, 212, 160, 0.1); color: #6cd4a0; border: 1px solid rgba(106, 212, 160, 0.15); }
+  .cell-slow { background: rgba(238, 221, 108, 0.1); color: #eedd6c; border: 1px solid rgba(238, 221, 108, 0.15); }
+  .cell-breaks { background: rgba(238, 108, 108, 0.1); color: #ee6c6c; border: 1px solid rgba(238, 108, 108, 0.15); }
+  .cell-na { background: rgba(255,255,255,0.02); color: #555; border: 1px solid rgba(255,255,255,0.05); }
+
+  /* Analogy */
+  .analogy-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto 48px;
+  }
+  .analogy-card {
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #ccc;
+  }
+  .analogy-card h3 { font-size: 15px; margin-bottom: 8px; }
+
+  /* Comparison table */
+  .scenario-table {
+    max-width: 1400px;
+    margin: 0 auto 48px;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  .scenario-table th {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 2px solid #2a2a3a;
+    color: #888;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .scenario-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+  .scenario-table tr:hover { background: rgba(255,255,255,0.02); }
+  .col-t1 { color: #b4a0ee; }
+  .col-t2 { color: #ee6ca0; }
+  .col-t3 { color: #6cd4ee; }
+
+  /* Sources */
+  .sources {
+    max-width: 1400px;
+    margin: 0 auto 20px;
+    padding: 20px 24px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .sources h3 { font-size: 13px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .sources a { color: #6cb4ee; text-decoration: none; font-size: 12px; line-height: 2; }
+  .sources a:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    .cards { grid-template-columns: 1fr; }
+    .break-grid { grid-template-columns: auto repeat(3, 1fr); font-size: 10px; }
+    .scenario-table { display: block; overflow-x: auto; }
+    .analogy-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧅 Tor × OpenClaw — Can an AI Agent Live on the Dark Web?</h1>
+<p class="subtitle">3 Tor integration scenarios for an AI assistant that needs WhatsApp, Claude API, and web access &nbsp;·&nbsp; Feb 2026</p>
+
+<a class="nav-btn" href="https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/vpn-scenarios-comparison.html">← Back to VPN Scenarios Comparison</a>
+
+<!-- ====== SCENARIO CARDS ====== -->
+<div class="cards">
+
+  <!-- T1: Half Tor -->
+  <div class="card card-t1">
+    <span class="card-badge">Scenario T1 — Half Tor</span>
+    <h2>🧅 Split Routing — Tor for Browsing</h2>
+    <p class="card-desc">Tor runs as a local SOCKS5 proxy (port 9050). Web searches and research go through Tor. WhatsApp, Anthropic API, GitHub, and all critical services use the normal internet. Best of both worlds — or is it?</p>
+
+    <div class="arch-box">
+      <span class="arch-label">🔍 Research / Web Fetches:</span>
+      <span class="arch-node node-vps">🖥️ VPS</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-tor">🧅 Tor SOCKS5</span>
+      <span class="arch-arrow">→ 3 relays →</span>
+      <span class="arch-node node-tor">🌐 Exit Node</span>
+      <span class="arch-arrow">→</span>
+      Website
+      <br><br>
+      <span class="arch-label">💬 WhatsApp / 🤖 Claude / 📦 GitHub:</span>
+      <span class="arch-node node-vps">🖥️ VPS</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-api">🌐 Normal Internet</span>
+      <span class="arch-arrow">→</span>
+      API servers
+      <br><br>
+      <span class="arch-label">📥 Inbound (users accessing apps):</span>
+      <span class="arch-node node-user">📱 User</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vps">🖥️ VPS (real IP)</span>
+      <span style="color:#ee6c6c; font-size:10px;"> still exposed</span>
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-green">FREE</span>
+      <span class="tag tag-purple">Selective Anonymity</span>
+      <span class="tag tag-green">Core Services Unaffected</span>
+      <span class="tag tag-red">Inbound Still Exposed</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden (inbound) <span class="info-icon">i<span class="tooltip">Users connecting to your apps still hit your real VPS IP. Tor only anonymizes outbound connections that you explicitly route through it.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:0%"></span></span> No</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">IP Hidden (outbound) <span class="info-icon">i<span class="tooltip">Only traffic you route through torsocks/SOCKS5 is anonymized. Other outbound traffic (APIs, WhatsApp) uses your real IP.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:50%"></span></span> Partial</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">WhatsApp</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ✅ Normal</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Claude API</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ✅ Normal</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Web Search Latency</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-orange" style="width:60%"></span></span> +1–3 sec</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Effort</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:20%"></span></span> Easy (apt install tor)</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:0%"></span></span> $0</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ Core services (WhatsApp, Claude, GitHub) completely unaffected</div>
+      <div class="pro">✅ Web research anonymized — sites don't know your VPS IP</div>
+      <div class="pro">✅ Free — Tor is open source</div>
+      <div class="pro">✅ Easy setup — `apt install tor` + `torsocks` wrapper</div>
+      <div class="pro">✅ Can toggle per-command: `torsocks curl ...`</div>
+      <div class="con">❌ Inbound traffic still hits real IP — no server hiding</div>
+      <div class="con">❌ Web fetches 1–3 seconds slower through Tor</div>
+      <div class="con">❌ Many websites block Tor exit nodes (CAPTCHAs, 403s)</div>
+      <div class="con">❌ Tor exit node can see unencrypted traffic (use HTTPS!)</div>
+      <div class="neutral">⚠️ Brave Search API may block Tor exits — research might fail</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> Technically works, practically marginal. You get anonymous web browsing but the sites you search don't care about your IP anyway. Main benefit is hiding research patterns from your ISP. Doesn't protect the server from inbound attacks at all. <strong>Fun experiment, not a security upgrade.</strong>
+    </div>
+  </div>
+
+  <!-- T2: Full Tor -->
+  <div class="card card-t2">
+    <span class="card-badge">Scenario T2 — Full Tor</span>
+    <h2>💀 All Traffic Through Tor</h2>
+    <p class="card-desc">Force ALL outbound traffic through Tor using transparent proxy (iptables rules). Nothing leaves the VPS without going through 3 Tor relays. Also run apps as Tor Hidden Services (.onion addresses). The full dark web experience.</p>
+
+    <div class="arch-box">
+      <span class="arch-label">🔍 ALL outbound (APIs, WhatsApp, everything):</span>
+      <span class="arch-node node-vps">🖥️ VPS</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-tor">🧅 Tor</span>
+      <span class="arch-arrow">→ 3 relays →</span>
+      <span class="arch-node node-tor">🧅 Exit</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-dead">💀 API servers</span>
+      <br><br>
+      <span class="arch-label">📥 Inbound (via .onion Hidden Service):</span>
+      <span class="arch-node node-user">📱 User (Tor Browser)</span>
+      <span class="arch-arrow">→ 3 relays → rendezvous →</span>
+      <span class="arch-node node-vps">🖥️ VPS</span>
+      <br>
+      <span style="color:#ee6ca0; font-size:10px;">No IP exposed anywhere — but nothing works</span>
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-green">FREE</span>
+      <span class="tag tag-green">Full IP Hidden</span>
+      <span class="tag tag-red">WhatsApp DEAD</span>
+      <span class="tag tag-red">Claude API DEAD</span>
+      <span class="tag tag-red">GitHub DEAD</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden (inbound) <span class="info-icon">i<span class="tooltip">.onion Hidden Service means NO public IP. Users connect through a Tor rendezvous point. Neither side knows the other's IP. Maximum anonymity.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> Yes — .onion</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">IP Hidden (outbound) <span class="info-icon">i<span class="tooltip">ALL traffic exits through Tor. Destinations see Tor exit node IPs. Your VPS IP never appears anywhere on the internet.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> Yes — all Tor</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">WhatsApp</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:0%"></span></span> 💀 BLOCKED</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Claude API</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:5%"></span></span> 💀 300ms+ per token</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Web Search Latency</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:90%"></span></span> 3–10 sec</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Effort</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:85%"></span></span> Very Hard</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:0%"></span></span> $0</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ Maximum anonymity — no IP exposed anywhere, period</div>
+      <div class="pro">✅ .onion address = cryptographic identity, not an IP</div>
+      <div class="pro">✅ End-to-end encrypted by Tor protocol (no TLS needed)</div>
+      <div class="pro">✅ NAT punching — works behind any firewall, no ports needed</div>
+      <div class="con">❌ WhatsApp actively blocks Tor exit nodes — connection DEAD</div>
+      <div class="con">❌ Anthropic likely blocks/rate-limits Tor — Claude barely usable</div>
+      <div class="con">❌ GitHub blocks Tor pushes — no git operations</div>
+      <div class="con">❌ 300–1000ms latency on EVERY request</div>
+      <div class="con">❌ WebSocket connections drop every ~10 min (circuit rotation)</div>
+      <div class="con">❌ Users need Tor Browser to reach .onion apps</div>
+      <div class="con">❌ Most APIs block Tor exit IPs (shared by millions)</div>
+      <div class="con">❌ iptables transparent proxy is complex to configure correctly</div>
+      <div class="con">❌ DNS leaks possible if misconfigured</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> The AI agent dies. WhatsApp blocks Tor exits. Claude API becomes unusable at 300ms+ per token on streaming. WebSockets break every 10 minutes. You'd have the most anonymous dead bot on the internet. <strong>A beautiful suicide mission.</strong> 💀
+    </div>
+  </div>
+
+  <!-- T3: Half Tor + VPN Gateway -->
+  <div class="card card-t3">
+    <span class="card-badge">Scenario T3 — Tor + VPN Gateway</span>
+    <h2>🛡️ Half Tor + VPS B Gateway</h2>
+    <p class="card-desc">Combine the best of both: VPS B as WireGuard gateway hides your real IP for inbound AND normal outbound. Tor handles only web research for extra anonymity. Core services route through VPS B's clean IP. The paranoid architecture.</p>
+
+    <div class="arch-box">
+      <span class="arch-label">🔍 Research / Web Fetches:</span>
+      <span class="arch-node node-vps">🖥️ VPS A</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-tor">🧅 Tor SOCKS5</span>
+      <span class="arch-arrow">→ 3 relays →</span>
+      Website
+      <br><br>
+      <span class="arch-label">💬 WhatsApp / 🤖 Claude / 📦 GitHub:</span>
+      <span class="arch-node node-vps">🖥️ VPS A</span>
+      <span class="arch-arrow">→ tunnel →</span>
+      <span class="arch-node node-vpn">🔒 VPS B</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-api">🌐 Internet</span>
+      <br><br>
+      <span class="arch-label">📥 Inbound (users accessing apps):</span>
+      <span class="arch-node node-user">📱 User</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vpn">🔒 VPS B</span>
+      <span class="arch-arrow">→ tunnel →</span>
+      <span class="arch-node node-vps">🖥️ VPS A (hidden)</span>
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-yellow">$3–5/mo</span>
+      <span class="tag tag-green">IP Hidden (both directions)</span>
+      <span class="tag tag-green">Core Services Normal</span>
+      <span class="tag tag-purple">Research Anonymous</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden (inbound) <span class="info-icon">i<span class="tooltip">Users connect to VPS B's IP. VPS A's real IP is completely hidden behind the WireGuard tunnel. Same as VPN Scenario 3.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> Yes — via VPS B</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">IP Hidden (outbound) <span class="info-icon">i<span class="tooltip">Normal outbound exits through VPS B (hidden from VPS A's real IP). Research goes through Tor (hidden from everyone). Double anonymity.</span></span></span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> Yes — VPS B + Tor</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">WhatsApp</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ✅ Normal (via B)</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Claude API</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ✅ Normal (via B)</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Web Search Latency</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-orange" style="width:60%"></span></span> +1–3 sec (Tor)</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Effort</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:75%"></span></span> High</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:25%"></span></span> $3–5</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ VPS A completely hidden — inbound AND outbound</div>
+      <div class="pro">✅ Core services (WhatsApp, Claude, GitHub) run at full speed via VPS B</div>
+      <div class="pro">✅ Web research routed through Tor — even VPS B doesn't see it</div>
+      <div class="pro">✅ DDoS hits VPS B, not VPS A</div>
+      <div class="pro">✅ Two-layer anonymity: WireGuard tunnel + Tor for research</div>
+      <div class="pro">✅ VPS B's IP is clean (not a Tor exit) — no API blocks</div>
+      <div class="con">❌ Most complex setup (WireGuard + Tor + split routing)</div>
+      <div class="con">❌ Extra $3–5/month for VPS B</div>
+      <div class="con">❌ Web research still slow (Tor latency) + possible exit node blocks</div>
+      <div class="con">❌ Two machines + Tor to maintain</div>
+      <div class="neutral">⚠️ The real question: is anyone actually tracking your web searches?</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> The paranoid's dream setup. If you're hiding from a nation-state that monitors both your server AND your research patterns, this is it. For a dev VPS? Overkill so extreme it loops back around to being cool. <strong>The James Bond of VPS architectures.</strong> 🕵️
+    </div>
+  </div>
+
+</div>
+
+<!-- ====== WHAT BREAKS ====== -->
+<h2 class="section-title">💥 OpenClaw Service Compatibility</h2>
+<p class="section-sub">What survives each Tor scenario</p>
+
+<div class="breaks-section">
+  <div class="break-grid">
+    <div class="break-header">Service</div>
+    <div class="break-header" style="color:#b4a0ee;">T1: Half Tor</div>
+    <div class="break-header" style="color:#ee6ca0;">T2: Full Tor</div>
+    <div class="break-header" style="color:#6cd4ee;">T3: Tor + VPN</div>
+
+    <div class="break-service">💬 WhatsApp Gateway</div>
+    <div class="break-cell cell-works">✅ Normal internet</div>
+    <div class="break-cell cell-breaks">💀 Blocked by Meta</div>
+    <div class="break-cell cell-works">✅ Via VPS B</div>
+
+    <div class="break-service">🤖 Claude API (Anthropic)</div>
+    <div class="break-cell cell-works">✅ Normal internet</div>
+    <div class="break-cell cell-breaks">💀 300ms+ per token, likely blocked</div>
+    <div class="break-cell cell-works">✅ Via VPS B</div>
+
+    <div class="break-service">📦 GitHub (git push/pull)</div>
+    <div class="break-cell cell-works">✅ Normal internet</div>
+    <div class="break-cell cell-breaks">💀 Blocks Tor exits</div>
+    <div class="break-cell cell-works">✅ Via VPS B</div>
+
+    <div class="break-service">🔍 Web Search (Brave API)</div>
+    <div class="break-cell cell-slow">⚠️ Slow + possible blocks</div>
+    <div class="break-cell cell-breaks">💀 Blocked / CAPTCHAs</div>
+    <div class="break-cell cell-slow">⚠️ Slow through Tor</div>
+
+    <div class="break-service">🌐 Web Fetch (curl/fetch)</div>
+    <div class="break-cell cell-slow">⚠️ +1-3s via torsocks</div>
+    <div class="break-cell cell-slow">⚠️ +1-3s, some sites block</div>
+    <div class="break-cell cell-slow">⚠️ +1-3s via Tor</div>
+
+    <div class="break-service">🔒 SSH Access</div>
+    <div class="break-cell cell-works">✅ Normal</div>
+    <div class="break-cell cell-breaks">💀 Must use .onion address</div>
+    <div class="break-cell cell-works">✅ Via VPS B or direct</div>
+
+    <div class="break-service">📱 App Inbound (users)</div>
+    <div class="break-cell cell-breaks">❌ Real IP exposed</div>
+    <div class="break-cell cell-slow">🧅 .onion only (Tor Browser required)</div>
+    <div class="break-cell cell-works">✅ Via VPS B — hidden</div>
+
+    <div class="break-service">🔄 WebSocket Stability</div>
+    <div class="break-cell cell-works">✅ Unaffected</div>
+    <div class="break-cell cell-breaks">💀 Drops every ~10 min</div>
+    <div class="break-cell cell-works">✅ Unaffected</div>
+  </div>
+</div>
+
+<!-- ====== COMPARISON TABLE ====== -->
+<h2 class="section-title">📊 Side-by-Side</h2>
+<p class="section-sub">All metrics at a glance</p>
+
+<table class="scenario-table">
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th class="col-t1">T1: Half Tor</th>
+      <th class="col-t2">T2: Full Tor</th>
+      <th class="col-t3">T3: Tor + VPN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Monthly Cost</td>
+      <td class="col-t1">$0</td>
+      <td class="col-t2">$0</td>
+      <td class="col-t3">$3–5</td>
+    </tr>
+    <tr>
+      <td>IP Hidden (inbound)</td>
+      <td class="col-t1">❌ No</td>
+      <td class="col-t2">✅ .onion</td>
+      <td class="col-t3">✅ VPS B</td>
+    </tr>
+    <tr>
+      <td>IP Hidden (outbound)</td>
+      <td class="col-t1">⚠️ Partial (Tor only)</td>
+      <td class="col-t2">✅ All Tor</td>
+      <td class="col-t3">✅ VPS B + Tor</td>
+    </tr>
+    <tr>
+      <td>WhatsApp</td>
+      <td class="col-t1">✅ Works</td>
+      <td class="col-t2">💀 Dead</td>
+      <td class="col-t3">✅ Works</td>
+    </tr>
+    <tr>
+      <td>Claude API</td>
+      <td class="col-t1">✅ Works</td>
+      <td class="col-t2">💀 Unusable</td>
+      <td class="col-t3">✅ Works</td>
+    </tr>
+    <tr>
+      <td>Web Research Speed</td>
+      <td class="col-t1">+1–3s</td>
+      <td class="col-t2">+3–10s</td>
+      <td class="col-t3">+1–3s</td>
+    </tr>
+    <tr>
+      <td>Anonymity Level</td>
+      <td class="col-t1">Low (research only)</td>
+      <td class="col-t2">Maximum (everything)</td>
+      <td class="col-t3">High (server + research)</td>
+    </tr>
+    <tr>
+      <td>OpenClaw Functional</td>
+      <td class="col-t1">✅ Yes</td>
+      <td class="col-t2">❌ Barely</td>
+      <td class="col-t3">✅ Yes</td>
+    </tr>
+    <tr>
+      <td>Setup Complexity</td>
+      <td class="col-t1">Easy</td>
+      <td class="col-t2">Very Hard</td>
+      <td class="col-t3">Hard</td>
+    </tr>
+    <tr>
+      <td>Who Needs This</td>
+      <td class="col-t1">Curious devs</td>
+      <td class="col-t2">Whistleblowers</td>
+      <td class="col-t3">Paranoid professionals</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ====== ANALOGY ====== -->
+<h2 class="section-title">🏠 The House Analogy — Tor Edition</h2>
+<p class="section-sub">Same house, different levels of disguise</p>
+
+<div class="analogy-cards">
+  <div class="analogy-card card-t1">
+    <h3>🧅 T1: Half Tor</h3>
+    <p>You live in your house with the address visible. When you go shopping, you wear a disguise. When friends come visit, they come to your real address. When you make phone calls, you use your real phone. <strong>You're anonymous at the store, but everyone knows where you live.</strong></p>
+  </div>
+  <div class="analogy-card card-t2">
+    <h3>💀 T2: Full Tor</h3>
+    <p>You've erased your house from every map. There's no address, no door number, no mailbox. Visitors must navigate a maze of underground tunnels to find a meeting point where you appear as a shadow. Your phone doesn't work. Your mail doesn't arrive. Amazon can't deliver. <strong>You're a ghost — but also basically dead.</strong></p>
+  </div>
+  <div class="analogy-card card-t3">
+    <h3>🕵️ T3: Tor + VPN Gateway</h3>
+    <p>You've moved to a hidden address. Visitors go to your <strong>PO box</strong> (VPS B) which forwards mail through a tunnel. When you go shopping, you <em>also</em> wear a disguise (Tor). Your phone calls go through the PO box's phone line. <strong>Nobody knows where you live, AND nobody recognizes you at the store.</strong> A bit excessive for buying groceries, but you do you.</p>
+  </div>
+</div>
+
+<!-- ====== SOURCES ====== -->
+<div class="sources">
+  <h3>📚 Sources</h3>
+  <a href="https://community.torproject.org/onion-services/overview/" target="_blank">Tor Project — Onion Services Overview (Hidden Service protocol explained)</a><br>
+  <a href="https://2019.www.torproject.org/docs/tor-onion-service.html.en" target="_blank">Tor Project — Onion Service Configuration Instructions</a><br>
+  <a href="https://tails.net/contribute/design/Tor_enforcement/" target="_blank">Tails OS — Tor Enforcement Design (transparent proxy, DNS leak prevention)</a><br>
+  <a href="https://www.wireguard.com/" target="_blank">WireGuard Official — VPN protocol used in T3's gateway layer</a><br>
+  <a href="https://www.ivpn.net/blog/why-you-dont-need-a-vpn/" target="_blank">IVPN — Why You Don't Need a VPN (commercial VPN limitations, applicable to Tor too)</a><br>
+  <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04" target="_blank">DigitalOcean — WireGuard Setup Guide</a><br>
+</div>
+
+</body>
+</html>

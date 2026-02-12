@@ -24,6 +24,9 @@ Five approaches to managing secrets on a VPS: plain .env + permissions (current)
 ### 6. [VPN Scenarios — No VPN vs WireGuard vs VPS Gateway vs NordVPN](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/vpn-scenarios-comparison.html)
 Four VPN approaches for an OpenClaw VPS: hardened Linux only, local WireGuard on same machine, separate VPS as WireGuard gateway, and commercial VPN (NordVPN). Includes attack scenario matrix and inbound vs outbound IP visibility breakdown.
 
+### 7. [Tor × OpenClaw — Can an AI Agent Live on the Dark Web?](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/tor-openclaw-comparison.html)
+Three Tor integration scenarios for an AI assistant: half Tor (split routing for research), full Tor (everything through onion routing — spoiler: everything dies), and half Tor + VPN gateway (the paranoid's dream). Includes OpenClaw service compatibility matrix.
+
 ---
 
 ## Style Guide
