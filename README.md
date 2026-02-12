@@ -21,6 +21,9 @@ Gateway vs Main Agent vs Sub-Agent — full comparison of trust levels, Docker's
 ### 5. [Secrets Management — Plain Files vs Encrypted vs Vault](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/secrets-management-comparison.html)
 Five approaches to managing secrets on a VPS: plain .env + permissions (current), systemd credentials, SOPS+age, HashiCorp Vault, and environment-only. Shows what we already cover (~80%).
 
+### 6. [VPN Scenarios — No VPN vs WireGuard vs VPS Gateway vs NordVPN](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/vpn-scenarios-comparison.html)
+Four VPN approaches for an OpenClaw VPS: hardened Linux only, local WireGuard on same machine, separate VPS as WireGuard gateway, and commercial VPN (NordVPN). Includes attack scenario matrix and inbound vs outbound IP visibility breakdown.
+
 ---
 
 ## Style Guide
