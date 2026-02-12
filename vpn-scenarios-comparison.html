@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPN Scenarios Comparison — OpenClaw VPS Security</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    padding: 40px 20px;
+  }
+  h1 { text-align: center; font-size: 26px; color: #fff; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-size: 13px; }
+
+  /* Scenario cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto 48px;
+  }
+  .card {
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-s1 { background: linear-gradient(135deg, #1a2a1e, #162e1e); border: 2px solid #3a8a5a; }
+  .card-s2 { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #2a3a5c; }
+  .card-s3 { background: linear-gradient(135deg, #2a1a2e, #2e1630); border: 1px solid #5c2a5c; }
+  .card-s4 { background: linear-gradient(135deg, #2a2a1a, #2e2616); border: 1px solid #5c5c2a; }
+
+  .card-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    width: fit-content;
+  }
+  .card-s1 .card-badge { background: #2a5c3a; color: #6cd4a0; }
+  .card-s2 .card-badge { background: #2a3a5c; color: #6cb4ee; }
+  .card-s3 .card-badge { background: #5c2a5c; color: #d4a0ee; }
+  .card-s4 .card-badge { background: #5c5c2a; color: #eedd6c; }
+
+  .card h2 { font-size: 18px; margin-bottom: 4px; }
+  .card-s1 h2 { color: #6cd4a0; }
+  .card-s2 h2 { color: #6cb4ee; }
+  .card-s3 h2 { color: #d4a0ee; }
+  .card-s4 h2 { color: #eedd6c; }
+
+  .card-desc { color: #999; font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+
+  /* Architecture diagram */
+  .arch-box {
+    background: rgba(0,0,0,0.35);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #8899aa;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .card-s1 .arch-box { border: 1px solid #2a4a3a; }
+  .card-s2 .arch-box { border: 1px solid #2a3a5c; }
+  .card-s3 .arch-box { border: 1px solid #4a2a4a; }
+  .card-s4 .arch-box { border: 1px solid #4a4a2a; }
+
+  .arch-node {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .node-vps { background: #1a3a2a; color: #6cd4a0; border: 1px solid #3a6a4a; }
+  .node-vpn { background: #2a2a4a; color: #a0a0ee; border: 1px solid #4a4a7a; }
+  .node-nord { background: #3a3a1a; color: #eedd6c; border: 1px solid #6a6a3a; }
+  .node-user { background: #2a1a1a; color: #ee9a6c; border: 1px solid #5a3a2a; }
+  .node-internet { background: #1a1a1a; color: #888; border: 1px solid #333; }
+  .arch-arrow { color: #556; font-size: 14px; margin: 0 4px; }
+
+  /* Metrics */
+  .metrics { margin-bottom: 16px; flex-grow: 1; }
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .metric-label { color: #999; }
+  .metric-value { font-weight: 600; font-size: 12px; }
+
+  /* Score bars */
+  .score-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .fill-green { background: #6cd4a0; }
+  .fill-blue { background: #6cb4ee; }
+  .fill-purple { background: #d4a0ee; }
+  .fill-yellow { background: #eedd6c; }
+  .fill-red { background: #ee6c6c; }
+  .fill-orange { background: #ee9a6c; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .tag-green { background: #1a3a2a; color: #6cd4a0; }
+  .tag-red { background: #3a1a1a; color: #ee6c6c; }
+  .tag-blue { background: #1a2a3a; color: #6cb4ee; }
+  .tag-yellow { background: #3a3a1a; color: #eedd6c; }
+  .tag-gray { background: #2a2a2a; color: #999; }
+
+  /* Pros/Cons */
+  .pros-cons { font-size: 12px; line-height: 1.8; margin-bottom: 12px; }
+  .pro { color: #6cd4a0; }
+  .con { color: #ee6c6c; }
+  .neutral { color: #eedd6c; }
+
+  /* Bottom verdict */
+  .verdict-box {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-top: auto;
+  }
+  .card-s1 .verdict-box { border: 1px solid #2a4a3a; color: #6cd4a0; }
+  .card-s2 .verdict-box { border: 1px solid #2a3a5c; color: #6cb4ee; }
+  .card-s3 .verdict-box { border: 1px solid #4a2a4a; color: #d4a0ee; }
+  .card-s4 .verdict-box { border: 1px solid #4a4a2a; color: #eedd6c; }
+
+  /* Section headers */
+  .section-title {
+    text-align: center;
+    color: #fff;
+    font-size: 20px;
+    margin: 48px auto 8px;
+    max-width: 1400px;
+  }
+  .section-sub {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 28px;
+  }
+
+  /* Scenario table */
+  .scenario-table {
+    max-width: 1400px;
+    margin: 0 auto 48px;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  .scenario-table th {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 2px solid #2a2a3a;
+    color: #888;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .scenario-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+  .scenario-table tr:hover { background: rgba(255,255,255,0.02); }
+  .col-s1 { color: #6cd4a0; }
+  .col-s2 { color: #6cb4ee; }
+  .col-s3 { color: #d4a0ee; }
+  .col-s4 { color: #eedd6c; }
+
+  /* Attack scenarios section */
+  .attacks {
+    max-width: 1400px;
+    margin: 0 auto 48px;
+  }
+  .attack-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: stretch;
+  }
+  .attack-label {
+    min-width: 200px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .attack-label h4 { font-size: 13px; color: #fff; margin-bottom: 4px; }
+  .attack-label p { font-size: 11px; color: #666; line-height: 1.4; }
+  .attack-cells {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    flex-grow: 1;
+  }
+  .attack-cell {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .cell-safe { background: rgba(106, 212, 160, 0.1); color: #6cd4a0; border: 1px solid rgba(106, 212, 160, 0.2); }
+  .cell-partial { background: rgba(238, 221, 108, 0.1); color: #eedd6c; border: 1px solid rgba(238, 221, 108, 0.2); }
+  .cell-exposed { background: rgba(238, 108, 108, 0.1); color: #ee6c6c; border: 1px solid rgba(238, 108, 108, 0.2); }
+
+  /* Sources */
+  .sources {
+    max-width: 1400px;
+    margin: 0 auto 20px;
+    padding: 20px 24px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .sources h3 { font-size: 13px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .sources a { color: #6cb4ee; text-decoration: none; font-size: 12px; line-height: 2; }
+  .sources a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .cards { grid-template-columns: 1fr; }
+    .attack-row { flex-direction: column; }
+    .attack-cells { grid-template-columns: repeat(2, 1fr); }
+    .attack-label { min-width: unset; }
+    .scenario-table { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🔒 VPN Scenarios — OpenClaw VPS Security</h1>
+<p class="subtitle">4 approaches compared: No VPN vs Local WireGuard vs Separate VPN VPS vs Commercial VPN (NordVPN) &nbsp;·&nbsp; Researched Feb 2026</p>
+
+<!-- ====== SCENARIO CARDS ====== -->
+<div class="cards">
+
+  <!-- SCENARIO 1: No VPN (Current) -->
+  <div class="card card-s1">
+    <span class="card-badge">Scenario 1 — Current Setup</span>
+    <h2>🛡️ Hardened Linux, No VPN</h2>
+    <p class="card-desc">OpenClaw VPS with comprehensive Linux security hardening (SSH, firewall, HTTPS, user isolation, rootkit detection, monitoring) — but no VPN layer. All app ports are directly exposed to the internet behind UFW.</p>
+
+    <div class="arch-box">
+      <span class="arch-node node-user">📱 You</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-internet">🌐 Internet</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vps">🖥️ VPS A (OpenClaw + Apps)</span>
+      <br><br>
+      Direct connection to each port via HTTPS
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-green">FREE</span>
+      <span class="tag tag-green">Zero Latency Added</span>
+      <span class="tag tag-red">14+ Ports Exposed</span>
+      <span class="tag tag-yellow">IP Visible to World</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:0%"></span></span> No</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Attack Surface</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:85%"></span></span> 14 ports</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latency Impact</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:0%"></span></span> 0ms</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Complexity</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:20%"></span></span> Done</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:0%"></span></span> $0</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">DDoS Protection</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:15%"></span></span> None</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Encryption (transit)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:80%"></span></span> TLS 1.2+</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ Zero added complexity — already running</div>
+      <div class="pro">✅ No latency penalty</div>
+      <div class="pro">✅ No additional cost</div>
+      <div class="pro">✅ No single point of failure added</div>
+      <div class="con">❌ All app ports visible on internet</div>
+      <div class="con">❌ VPS real IP exposed to every visitor</div>
+      <div class="con">❌ Port scanners see full service list</div>
+      <div class="con">❌ No DDoS buffer</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> Solid for dev. The hardening (SSH crypto, fail2ban, GeoIP, monitoring, rootkit scanning, TLS everywhere) provides multiple defense layers. But every service is a visible target. Acceptable when you control who accesses the VPS.
+    </div>
+  </div>
+
+  <!-- SCENARIO 2: Local WireGuard -->
+  <div class="card card-s2">
+    <span class="card-badge">Scenario 2 — Same Machine</span>
+    <h2>🔵 Local WireGuard VPN</h2>
+    <p class="card-desc">Install WireGuard on the same VPS alongside OpenClaw. Apps bind only to the WireGuard tunnel interface (10.0.0.x). Only 1 UDP port (WireGuard) + SSH exposed publicly. Access all apps through the encrypted tunnel from your phone/laptop.</p>
+
+    <div class="arch-box">
+      <span class="arch-node node-user">📱 You (WG client)</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-internet">🌐 Internet</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vpn">🔒 WG port (UDP)</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vps">🖥️ VPS A (tunnel: 10.0.0.1)</span>
+      <br><br>
+      Apps listen on 10.0.0.1 only — invisible from internet
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-green">FREE</span>
+      <span class="tag tag-blue">~4,000 Lines of Code</span>
+      <span class="tag tag-green">2 Ports Exposed</span>
+      <span class="tag tag-yellow">Same IP Visible</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:0%"></span></span> No</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Attack Surface</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:15%"></span></span> 2 ports</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latency Impact</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:5%"></span></span> &lt;1ms</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Complexity</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:40%"></span></span> Medium</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:0%"></span></span> $0</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">DDoS Protection</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:15%"></span></span> None</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Encryption (transit)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ChaCha20 + TLS</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ Drops exposed ports from 14 to 2 (WG + SSH)</div>
+      <div class="pro">✅ Free — WireGuard is in the Linux kernel</div>
+      <div class="pro">✅ Fastest VPN: ~1Gbps throughput, kernel-level</div>
+      <div class="pro">✅ ~4,000 lines of auditable code (vs 600K+ for OpenVPN)</div>
+      <div class="pro">✅ Phone/laptop access to all apps like LAN</div>
+      <div class="pro">✅ ChaCha20-Poly1305 encryption on all traffic</div>
+      <div class="con">❌ VPS IP still visible (WG port is on that IP)</div>
+      <div class="con">❌ Same box compromise = VPN compromised</div>
+      <div class="con">❌ Apps need reconfiguring to bind to tunnel interface</div>
+      <div class="con">❌ No DDoS buffer — still direct to VPS</div>
+      <div class="neutral">⚠️ Need WG client on every device you access from</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> Best bang for zero bucks. Reduces attack surface from 14 ports to 2 while adding military-grade encryption. The IP is still visible but there's almost nothing to attack. WireGuard's kernel-space implementation adds negligible latency. <strong>Recommended for dev.</strong>
+    </div>
+  </div>
+
+  <!-- SCENARIO 3: Separate VPN VPS -->
+  <div class="card card-s3">
+    <span class="card-badge">Scenario 3 — Separate VPS</span>
+    <h2>🟣 VPS B as WireGuard Gateway</h2>
+    <p class="card-desc">A second cheap VPS ($3–5/mo) runs WireGuard as a gateway. Public traffic hits VPS B first. VPS B forwards through encrypted WireGuard tunnel to VPS A. VPS A's real IP is never exposed — only VPS B's IP is public.</p>
+
+    <div class="arch-box">
+      <span class="arch-node node-user">📱 You</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-internet">🌐 Internet</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vpn">🔒 VPS B (WG Gateway)</span>
+      <span class="arch-arrow">→ tunnel →</span>
+      <span class="arch-node node-vps">🖥️ VPS A (hidden)</span>
+      <br><br>
+      VPS A's real IP completely hidden from public
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-yellow">$3–5/mo</span>
+      <span class="tag tag-green">0 Public Ports on A</span>
+      <span class="tag tag-green">IP Hidden</span>
+      <span class="tag tag-blue">Two Machines</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> Yes ✓</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Attack Surface (VPS A)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:5%"></span></span> 0 public</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latency Impact</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:35%"></span></span> 5–30ms hop</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Complexity</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-orange" style="width:65%"></span></span> High</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:25%"></span></span> $3–5</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">DDoS Protection</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:70%"></span></span> VPS B absorbs</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Encryption (transit)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:100%"></span></span> ChaCha20 + TLS</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ VPS A's real IP completely hidden</div>
+      <div class="pro">✅ Zero public ports on VPS A</div>
+      <div class="pro">✅ DDoS hits VPS B, not your actual server</div>
+      <div class="pro">✅ Can swap VPS B IP anytime without touching A</div>
+      <div class="pro">✅ If B is compromised, tunnel is still encrypted</div>
+      <div class="pro">✅ Clean separation: routing on B, apps on A</div>
+      <div class="con">❌ Extra $3–5/month</div>
+      <div class="con">❌ Added latency (extra network hop)</div>
+      <div class="con">❌ Two machines to maintain and secure</div>
+      <div class="con">❌ If VPS B goes down, everything goes down</div>
+      <div class="con">❌ More complex networking (NAT, forwarding rules)</div>
+      <div class="neutral">⚠️ Need to harden VPS B too (it's now the front door)</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> The production-grade solution. True IP anonymity + DDoS buffer. Worth it when your VPS hosts real customers or sensitive data. The $3–5/mo buys you an expendable front door you can replace in minutes. <strong>Recommended for production.</strong>
+    </div>
+  </div>
+
+  <!-- SCENARIO 4: Commercial VPN (NordVPN) -->
+  <div class="card card-s4">
+    <span class="card-badge">Scenario 4 — Commercial VPN</span>
+    <h2>🟡 NordVPN / Commercial VPN</h2>
+    <p class="card-desc">Route all VPS outbound traffic through a commercial VPN (NordVPN, Mullvad, etc.). The VPS connects to NordVPN's servers — outbound traffic gets NordVPN's IP. But inbound connections from users still hit the VPS's real IP directly.</p>
+
+    <div class="arch-box">
+      <span class="arch-node node-user">📱 You</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-internet">🌐 Internet</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node node-vps">🖥️ VPS A (real IP)</span>
+      <span class="arch-arrow">outbound →</span>
+      <span class="arch-node node-nord">🏢 NordVPN Server</span>
+      <br><br>
+      Outbound hidden ✓ &nbsp;·&nbsp; Inbound still exposed ✗
+    </div>
+
+    <div class="tags">
+      <span class="tag tag-yellow">$3–5/mo</span>
+      <span class="tag tag-red">14+ Ports Still Exposed</span>
+      <span class="tag tag-yellow">Outbound IP Only</span>
+      <span class="tag tag-red">Third-Party Trust</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">IP Hidden (inbound)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:0%"></span></span> No</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">IP Hidden (outbound)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:90%"></span></span> Yes</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Attack Surface</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:85%"></span></span> 14 ports</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latency Impact</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-orange" style="width:55%"></span></span> 10–50ms</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Setup Complexity</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:25%"></span></span> Low</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Monthly Cost</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-yellow" style="width:30%"></span></span> $3–5</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">DDoS Protection</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-red" style="width:15%"></span></span> None</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Encryption (transit)</span>
+        <span class="metric-value"><span class="score-bar"><span class="score-fill fill-green" style="width:90%"></span></span> WireGuard/NordLynx</span>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pro">✅ Outbound traffic gets anonymized IP</div>
+      <div class="pro">✅ Easy setup — install CLI, connect, done</div>
+      <div class="pro">✅ NordVPN uses NordLynx (WireGuard-based) — fast</div>
+      <div class="pro">✅ Good if VPS makes outbound API calls to untrusted services</div>
+      <div class="con">❌ Does NOT hide your VPS from incoming connections</div>
+      <div class="con">❌ All app ports still exposed to internet</div>
+      <div class="con">❌ No DDoS protection at all</div>
+      <div class="con">❌ You trust a third party with ALL your outbound traffic</div>
+      <div class="con">❌ Commercial VPN ToS may forbid server use</div>
+      <div class="con">❌ Added latency on every outbound request (API calls, web fetches)</div>
+      <div class="con">❌ Can break WebSocket connections (OpenClaw relies on these)</div>
+      <div class="neutral">⚠️ NordVPN claims "no logs" but you can't verify it (source: IVPN)</div>
+    </div>
+
+    <div class="verdict-box">
+      <strong>Verdict:</strong> Wrong tool for this job. Commercial VPNs protect <em>outbound</em> privacy (hiding where your server goes), not <em>inbound</em> security (hiding your server from attackers). All your ports stay exposed. Costs the same as a VPN VPS gateway but gives you almost none of the security benefits. Only useful if you need to anonymize outbound API calls.
+    </div>
+  </div>
+
+</div>
+
+<!-- ====== COMPARISON TABLE ====== -->
+<h2 class="section-title">📊 Side-by-Side Comparison</h2>
+<p class="section-sub">All metrics at a glance</p>
+
+<table class="scenario-table">
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th class="col-s1">S1: No VPN</th>
+      <th class="col-s2">S2: Local WG</th>
+      <th class="col-s3">S3: VPS B Gateway</th>
+      <th class="col-s4">S4: NordVPN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Monthly Cost</td>
+      <td class="col-s1">$0</td>
+      <td class="col-s2">$0</td>
+      <td class="col-s3">$3–5</td>
+      <td class="col-s4">$3–5</td>
+    </tr>
+    <tr>
+      <td>Public Ports on VPS A</td>
+      <td class="col-s1">14+</td>
+      <td class="col-s2">2 (WG + SSH)</td>
+      <td class="col-s3">0 (tunnel only)</td>
+      <td class="col-s4">14+</td>
+    </tr>
+    <tr>
+      <td>VPS A IP Hidden</td>
+      <td class="col-s1">❌ No</td>
+      <td class="col-s2">❌ No</td>
+      <td class="col-s3">✅ Yes</td>
+      <td class="col-s4">❌ No (inbound)</td>
+    </tr>
+    <tr>
+      <td>Outbound IP Hidden</td>
+      <td class="col-s1">❌ No</td>
+      <td class="col-s2">❌ No</td>
+      <td class="col-s3">✅ Via VPS B</td>
+      <td class="col-s4">✅ Via NordVPN</td>
+    </tr>
+    <tr>
+      <td>DDoS Buffer</td>
+      <td class="col-s1">❌ None</td>
+      <td class="col-s2">❌ None</td>
+      <td class="col-s3">✅ VPS B absorbs</td>
+      <td class="col-s4">❌ None</td>
+    </tr>
+    <tr>
+      <td>Added Latency</td>
+      <td class="col-s1">0ms</td>
+      <td class="col-s2">&lt;1ms</td>
+      <td class="col-s3">5–30ms</td>
+      <td class="col-s4">10–50ms</td>
+    </tr>
+    <tr>
+      <td>Encryption Layer</td>
+      <td class="col-s1">TLS 1.2+</td>
+      <td class="col-s2">ChaCha20 + TLS</td>
+      <td class="col-s3">ChaCha20 + TLS</td>
+      <td class="col-s4">NordLynx + TLS</td>
+    </tr>
+    <tr>
+      <td>Third-Party Trust</td>
+      <td class="col-s1">None</td>
+      <td class="col-s2">None</td>
+      <td class="col-s3">VPS provider</td>
+      <td class="col-s4">NordVPN sees all traffic</td>
+    </tr>
+    <tr>
+      <td>Setup Complexity</td>
+      <td class="col-s1">Done ✅</td>
+      <td class="col-s2">Medium (30 min)</td>
+      <td class="col-s3">High (1–2 hours)</td>
+      <td class="col-s4">Low (10 min)</td>
+    </tr>
+    <tr>
+      <td>Maintenance</td>
+      <td class="col-s1">1 machine</td>
+      <td class="col-s2">1 machine + WG config</td>
+      <td class="col-s3">2 machines</td>
+      <td class="col-s4">1 machine + subscription</td>
+    </tr>
+    <tr>
+      <td>Single Point of Failure</td>
+      <td class="col-s1">VPS A</td>
+      <td class="col-s2">VPS A</td>
+      <td class="col-s3">VPS B (front door)</td>
+      <td class="col-s4">NordVPN servers</td>
+    </tr>
+    <tr>
+      <td>OpenClaw Compatible</td>
+      <td class="col-s1">✅ Native</td>
+      <td class="col-s2">✅ Bind to tunnel</td>
+      <td class="col-s3">✅ Forward ports</td>
+      <td class="col-s4">⚠️ WebSocket issues possible</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ====== ATTACK SCENARIOS ====== -->
+<h2 class="section-title">⚔️ Attack Scenarios</h2>
+<p class="section-sub">How each setup handles real-world threats</p>
+
+<div class="attacks">
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>🔍 Port Scanning (nmap)</h4>
+      <p>Attacker scans for open services</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-exposed">Sees 14+ open ports and services</div>
+      <div class="attack-cell cell-safe">Sees only WG (UDP) + SSH</div>
+      <div class="attack-cell cell-safe">Sees only VPS B — VPS A invisible</div>
+      <div class="attack-cell cell-exposed">Sees 14+ open ports (unchanged)</div>
+    </div>
+  </div>
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>🌊 DDoS Attack</h4>
+      <p>Volumetric flood targeting your IP</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-exposed">Direct hit — VPS goes down</div>
+      <div class="attack-cell cell-exposed">Direct hit — same IP</div>
+      <div class="attack-cell cell-safe">VPS B absorbs — swap B, keep A running</div>
+      <div class="attack-cell cell-exposed">Direct hit — NordVPN only protects outbound</div>
+    </div>
+  </div>
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>🔑 SSH Brute Force</h4>
+      <p>Automated login attempts</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-partial">Fail2ban + GeoIP blocks most</div>
+      <div class="attack-cell cell-partial">Same — SSH still exposed</div>
+      <div class="attack-cell cell-safe">SSH only via tunnel — invisible from internet</div>
+      <div class="attack-cell cell-partial">Same — SSH still exposed</div>
+    </div>
+  </div>
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>🕵️ Traffic Sniffing</h4>
+      <p>MITM on network path</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-partial">TLS encrypted but metadata visible</div>
+      <div class="attack-cell cell-safe">Double encrypted (WG + TLS)</div>
+      <div class="attack-cell cell-safe">Double encrypted (WG + TLS)</div>
+      <div class="attack-cell cell-partial">NordVPN sees decrypted outbound traffic</div>
+    </div>
+  </div>
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>🎯 Targeted App Exploit</h4>
+      <p>0-day in one of your web apps</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-exposed">Attacker reaches app directly</div>
+      <div class="attack-cell cell-safe">App unreachable without WG keys</div>
+      <div class="attack-cell cell-partial">Must go through VPS B — extra layer</div>
+      <div class="attack-cell cell-exposed">App still directly reachable</div>
+    </div>
+  </div>
+
+  <div class="attack-row">
+    <div class="attack-label">
+      <h4>📡 IP Discovery</h4>
+      <p>Finding your real server IP</p>
+    </div>
+    <div class="attack-cells">
+      <div class="attack-cell cell-exposed">IP visible to everyone</div>
+      <div class="attack-cell cell-exposed">Same IP — WG doesn't hide it</div>
+      <div class="attack-cell cell-safe">Only VPS B IP known — A is hidden</div>
+      <div class="attack-cell cell-exposed">VPS IP still visible for inbound</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ====== SOURCES ====== -->
+<div class="sources">
+  <h3>📚 Sources</h3>
+  <a href="https://www.wireguard.com/" target="_blank">WireGuard Official — Protocol, performance, ~4,000 LOC kernel module</a><br>
+  <a href="https://www.wireguard.com/performance/" target="_blank">WireGuard Performance Benchmarks — vs OpenVPN vs IPsec</a><br>
+  <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04" target="_blank">DigitalOcean — How to Set Up WireGuard on Ubuntu 22.04</a><br>
+  <a href="https://www.procustodibus.com/blog/2020/10/wireguard-topologies/" target="_blank">Pro Custodibus — Primary WireGuard Topologies (Point-to-Point, Hub-and-Spoke, Point-to-Site, Site-to-Site)</a><br>
+  <a href="https://tailscale.com/blog/how-tailscale-works" target="_blank">Tailscale — How Tailscale Works (WireGuard mesh networking explained)</a><br>
+  <a href="https://www.ivpn.net/blog/why-you-dont-need-a-vpn/" target="_blank">IVPN — Why You Don't Need a VPN (commercial VPN limitations)</a><br>
+  <a href="https://mullvad.net/en/help/wireguard-and-mullvad-vpn" target="_blank">Mullvad — WireGuard Integration (NordLynx is WireGuard-based)</a><br>
+  <a href="https://www.stavros.io/posts/how-to-configure-wireguard/" target="_blank">Stavros.io — How to Easily Configure WireGuard</a><br>
+</div>
+
+</body>
+</html>
