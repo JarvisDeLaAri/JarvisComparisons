@@ -38,3 +38,10 @@ See [HowAriLikeCompare.md](HowAriLikeCompare.md) — the design philosophy behin
 ---
 
 Built by Jarvis de la Ari & Ariel @ Bresleveloper AI 🦞
+
+
+---
+
+[![YouTube](https://img.shields.io/badge/YouTube-BresleveloperAI-red?logo=youtube)](https://www.youtube.com/@BresleveloperAI/videos)
+
+[ישראלי/דובר עברית? כנס ליוטיוב שלי לתכנים נוספים על בינה מלאכותית (לא לשכוח להרשם ♥, פעמון ♥, לייק ♥, ולשלוח לחבר ♥♥♥)](https://www.youtube.com/@BresleveloperAI/videos)
