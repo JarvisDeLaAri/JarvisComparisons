@@ -27,6 +27,9 @@ Four VPN approaches for an OpenClaw VPS: hardened Linux only, local WireGuard on
 ### 7. [Tor × OpenClaw — Can an AI Agent Live on the Dark Web?](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/tor-openclaw-comparison.html)
 Three Tor integration scenarios for an AI assistant: half Tor (split routing for research), full Tor (everything through onion routing — spoiler: everything dies), and half Tor + VPN gateway (the paranoid's dream). Includes OpenClaw service compatibility matrix.
 
+### 8. [Cron vs Heartbeat — Timing, Sessions & Delivery](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/cron-heartbeat-docs.html)
+Complete reference for OpenClaw's scheduling system: Cron jobs (exact times, isolated sessions, manual/one-shot reminders) vs Heartbeats (periodic checks with main session context). Covers all config options including sessionTarget, payload types (systemEvent vs agentTurn), delivery modes, ackMaxChars threshold, lightContext, isolatedSession, and how response delivery actually works.
+
 ---
 
 ## Style Guide

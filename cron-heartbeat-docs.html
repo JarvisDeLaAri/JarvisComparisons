@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cron vs Heartbeat - OpenClaw Automation Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --accent: #ff6b9d;
+            --accent-secondary: #c084fc;
+            --accent-tertiary: #22d3ee;
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --border: #2a2a35;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --cron-color: #ff6b9d;
+            --heartbeat-color: #22d3ee;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 50%, var(--accent-tertiary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin: 50px 0 25px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        h2 .icon {
+            font-size: 1.5rem;
+        }
+        
+        h2.cron-title {
+            border-color: var(--cron-color);
+        }
+        
+        h2.heartbeat-title {
+            border-color: var(--heartbeat-color);
+        }
+        
+        h3 {
+            font-size: 1.4rem;
+            margin: 35px 0 15px 0;
+            color: var(--text-primary);
+        }
+        
+        h4 {
+            font-size: 1.1rem;
+            margin: 25px 0 10px 0;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .section-intro {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px 30px;
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+        
+        .section-intro p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+        }
+        
+        .card.cron-card::before {
+            background: var(--cron-color);
+        }
+        
+        .card.heartbeat-card::before {
+            background: var(--heartbeat-color);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+        
+        .card-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        
+        .card-type.cron {
+            background: rgba(255, 107, 157, 0.15);
+            color: var(--cron-color);
+        }
+        
+        .card-type.heartbeat {
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--heartbeat-color);
+        }
+        
+        .card-type.both {
+            background: rgba(192, 132, 252, 0.15);
+            color: var(--accent-secondary);
+        }
+        
+        .card-type.global {
+            background: rgba(100, 100, 120, 0.15);
+            color: var(--text-secondary);
+        }
+        
+        .card-type str {
+            color: var(--accent-secondary);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        
+        .idiot-proof {
+            background: rgba(34, 211, 238, 0.1);
+            border-left: 3px solid var(--accent-tertiary);
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        
+        .idiot-proof strong {
+            color: var(--accent-tertiary);
+        }
+        
+        .idiot-proof::before {
+            content: '💡 ';
+            font-size: 1.1rem;
+        }
+        
+        .technical {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .technical code {
+            color: var(--accent-secondary);
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 18px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .comparison-table th {
+            background: rgba(255, 255, 255, 0.03);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .tag.cron {
+            background: var(--cron-color);
+            color: var(--bg-dark);
+        }
+        
+        .tag.heartbeat {
+            background: var(--heartbeat-color);
+            color: var(--bg-dark);
+        }
+        
+        .when-to-use {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .when-box {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .when-box h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .when-box.cron {
+            border-top: 4px solid var(--cron-color);
+        }
+        
+        .when-box.heartbeat {
+            border-top: 4px solid var(--heartbeat-color);
+        }
+        
+        .when-box ul {
+            list-style: none;
+            margin-top: 20px;
+        }
+        
+        .when-box li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .when-box li:last-child {
+            border-bottom: none;
+        }
+        
+        .when-box li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .code-block {
+            background: #0d0d12;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .code-block code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        
+        .code-block .comment {
+            color: #6a737d;
+        }
+        
+        .code-block .key {
+            color: var(--accent);
+        }
+        
+        .code-block .string {
+            color: var(--success);
+        }
+        
+        .code-block .number {
+            color: var(--warning);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 50px 0;
+            margin-top: 60px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .when-to-use {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⏰ Cron vs Heartbeat</h1>
+            <p class="subtitle">Complete guide to OpenClaw automation settings. Everything you need to know about scheduling and periodic checks.</p>
+        </header>
+        
+        <section>
+            <h2><span class="icon">⚡</span> Quick Comparison</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th><span class="tag cron">Cron</span></th>
+                        <th><span class="tag heartbeat">Heartbeat</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Best For</strong></td>
+                        <td>Exact timing, one-shot reminders</td>
+                        <td>Periodic awareness, batched checks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timing</strong></td>
+                        <td>Precise (cron expression or specific time)</td>
+                        <td>Approximate (every N minutes)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Session</strong></td>
+                        <td>Main or isolated (fresh each run)</td>
+                        <td>Main session (shares context)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delivery</strong></td>
+                        <td>Announce to channel or webhook</td>
+                        <td>Target channel or "none"</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Model Override</strong></td>
+                        <td>Yes (can use different model)</td>
+                        <td>Yes (optional)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section>
+            <h2 class="cron-title"><span class="icon">⏰</span> Cron Job Settings</h2>
+            
+            <div class="section-intro">
+                <p>Cron jobs run at precise times and can execute in isolated sessions. Perfect for exact scheduling like "9:00 AM every Monday" or one-shot reminders.</p>
+            </div>
+            
+            <h3>Schedule Options</h3>
+            <div class="grid">
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.kind</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Tells cron HOW to schedule - run once, repeat forever, or on a schedule.
+                    </div>
+                    <div class="technical">
+                        Values: <str>"at"</str>, <str>"every"</str>, <str>"cron"</str>
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.at</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Sets the exact date/time for one-shot jobs. Like an alarm clock.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"2026-02-01T16:00:00Z"</code><br>
+                        Format: ISO 8601 (timezone optional, UTC if omitted)
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.everyMs</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Repeat every X milliseconds. Good for "check every 5 minutes".
+                    </div>
+                    <div class="technical">
+                        Example: <code>300000</code> = 5 minutes<br>
+                        Type: number (milliseconds)
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.expr</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Standard cron expression for recurring jobs. "At 7 AM every day" = "0 7 * * *"
+                    </div>
+                    <div class="technical">
+                        Format: <code>"minute hour day month weekday"</code><br>
+                        Example: <code>"0 7 * * *" </code> (7 AM daily)
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.tz</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Which timezone to use for the schedule. No more "why did it run at 5 AM?!"
+                    </div>
+                    <div class="technical">
+                        Example: <code>"America/New_York"</code>, <code>"Asia/Jerusalem"</code><br>
+                        Type: IANA timezone string
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">schedule.staggerMs</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Adds random delay (0-5 min by default) to prevent all jobs running at once.
+                    </div>
+                    <div class="technical">
+                        Example: <code>30000</code> = 30 seconds<br>
+                        Default: 0-5min random for top-of-hour jobs
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Session & Execution</h3>
+            <div class="grid">
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">sessionTarget</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Where the job runs - main session (with your chat history) or isolated (fresh start).
+                    </div>
+                    <div class="technical">
+                        <str>"main"</str> = your normal chat<br>
+                        <str>"isolated"</str> = fresh session each time<br>
+                        <str>"session:custom-id"</str> = named persistent session
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">wakeMode</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> When to actually run - immediately or wait for next heartbeat.
+                    </div>
+                    <div class="technical">
+                        <str>"now"</str> = run right away (default)<br>
+                        <str>"next-heartbeat"</str> = wait for next check-in
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">agentId</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Run this job using a specific agent. Useful in multi-agent setups.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"ops"</code>, <code>"main"</code><br>
+                        If omitted, uses default agent
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Payload (What Runs)</h3>
+            
+            <!-- CONCEPT EXPLANATION CARD -->
+            <div class="card" style="margin-bottom: 30px; border-color: var(--accent-secondary);">
+                <div class="card-header">
+                    <span class="card-title">🤔 System Event vs AI Turn - What's the Difference?</span>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--accent); margin-top: 0;">🖥️ System Event = A Nudge to Your Chat</h4>
+                    <div class="idiot-proof" style="border-color: var(--accent);">
+                        <strong>Simple explanation:</strong> Think of it like a note dropped into your current conversation. The AI sees it during the NEXT time it talks to you (next heartbeat or next message). It has full context of everything you've discussed.
+                    </div>
+                    <div class="idiot-proof" style="border-color: var(--accent);">
+                        <strong> (1) You give prompt to your session.</strong> this prompt is injected to your agent session (say your whatsapp session with your main agent with all your conversation history). <strong> (2) BUT you dont see the injection</strong>. IF agent decides to react to you with a message, <strong> (3) you see reply. </strong>
+                    </div>
+                    <div class="technical">
+                        • Runs in <code>main</code> session (your actual chat)<br>
+                        • AI sees your full conversation history<br>
+                        • Good for: reminders, nudges, things you want AI to remember<br>
+                        • Example: "Reminder: check calendar" → shows up in your chat
+                    </div>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--heartbeat-color); margin-top: 0;">🤖 AI Turn = A Background Worker</h4>
+                    <div class="idiot-proof" style="border-color: var(--heartbeat-color);">
+                        <strong>Simple explanation:</strong> Think of it like hiring a helper who does a task independently, then reports back. They DON'T see your chat history - they start fresh each time. They can use a different AI model and send results anywhere.
+                    </div>
+                    <div class="idiot-proof" style="border-color: var(--accent);">
+                        <strong> (1) You give prompt to NEW agent session.</strong> this prompt is creating new ISOLATED session with your agent  (with all his files, but no conversation history). <strong> (2) BUT you AND agent dont see the injection </strong>. IF you use announce it sends you a message to channel (say whatsapp), <strong> (3) you see reply BUT NOT AGENT. </strong>
+                    </div>
+
+                    <div class="technical">
+                        • Runs in <code>isolated</code> session (fresh, no history)<br>
+                        • AI starts with blank context each run<br>
+                        • Good for: reports, summaries, anything noisy or independent<br>
+                        • Example: "Morning briefing" → AI generates report → sends to WhatsApp
+                    </div>
+                </div>
+                
+                <div style="background: rgba(100, 100, 120, 0.15); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <strong style="color: var(--text-primary);">📋 Quick Decision Guide:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: var(--text-secondary);">
+                        <li>Want the AI to DO something in YOUR chat? → <strong>System Event</strong></li>
+                        <li>Want a background task that reports elsewhere? → <strong>AI Turn</strong></li>
+                        <li>Need full conversation context? → <strong>System Event</strong></li>
+                        <li>Want to use a different AI model? → <strong>AI Turn</strong></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="grid">
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.kind</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Tells cron WHAT to do - send a system event or run an AI turn.
+                    </div>
+                    <div class="technical">
+                        <str>"systemEvent"</str> = main session event<br>
+                        <str>"agentTurn"</str> = isolated AI run
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.text / payload.message</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> The actual message or prompt that gets executed.
+                    </div>
+                    <div class="technical">
+                        <code>payload.text</code> = for systemEvent<br>
+                        <code>payload.message</code> = for agentTurn
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.model</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Use a different AI model for this job. 
+                    </div>
+                    <div class="technical">
+                        Example: <code>"openai-codex/gpt-5.3-codex"</code>, <code>"minimax-m2.5:cloud"</code><br>
+                        Uses main model if omitted
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.thinking</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How much "thinking" the AI should do. More thinking = better results but more expensive.
+                    </div>
+                    <div class="technical">
+                        Values: <str>"off"</str>, <str>"minimal"</str>, <str>"low"</str>, <str>"medium"</str>, <str>"high"</str>, <str>"xhigh"</str>
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.timeoutSeconds</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Kill the job if it takes too long. Prevents runaway AI from costing too much.
+                    </div>
+                    <div class="technical">
+                        Example: <code>300</code> = 5 minutes<br>
+                        Default: no timeout (0)
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">payload.lightContext</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Skip loading workspace files. Load NOTHING for cron.
+                    </div>
+                    <div class="technical">
+                        <code>true</code>&nbsp; = no context loading<br>
+                        <code>false</code> = full workspace (default)
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Delivery (Where Results Go)</h3>
+            <div class="grid">
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">delivery.mode</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How to send results - just announce, post to webhook, or silent.
+                    </div>
+                    <div class="technical">
+                        <str>"announce"</str> = send to channel (default)<br>
+                        <str>"webhook"</str> = POST to URL<br>
+                        <str>"none"</str> = silent, no delivery
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">delivery.channel</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Which chat platform to send the result to.
+                    </div>
+                    <div class="technical">
+                        Options: <str>"whatsapp"</str>, <str>"telegram"</str>, <str>"discord"</str>, <str>"slack"</str>, <str>"last"</str>
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">delivery.to</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Specific recipient - phone number, chat ID, channel name.
+                    </div>
+                    <div class="technical">
+                        WhatsApp: <code>"+15551234567"</code><br>
+                        Telegram: <code>"-1001234567890:topic:123"</code><br>
+                        Discord: <code>"channel:C123456"</code>
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">delivery.bestEffort</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> If delivery fails, don't worry about it. Job still counts as success.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = don't fail on delivery error<br>
+                        <code>false</code> = fail if can't deliver (default)
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Other Options</h3>
+            <div class="grid">
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">name</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Human-readable name so you know what the job does.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"Morning briefing"</code><br>
+                        Shows in cron list and logs
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">enabled</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Turn the job on or off without deleting it.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = runs on schedule<br>
+                        <code>false</code> = paused
+                    </div>
+                </div>
+                
+                <div class="card cron-card">
+                    <div class="card-header">
+                        <span class="card-title">deleteAfterRun</span>
+                        <span class="card-type cron">Cron</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> One-shot jobs disappear after running. Like a self-destructing note.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = delete after success (default for "at" jobs)<br>
+                        <code>false</code> = keep running forever
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2 class="heartbeat-title"><span class="icon">💓</span> Heartbeat Settings</h2>
+            
+            <div class="section-intro">
+                <p>Heartbeats run periodically in the main session, allowing the AI to check on things and surface important updates. Perfect for batched monitoring like "check inbox + calendar + notifications".</p>
+            </div>
+            
+            <h3>Timing</h3>
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">every</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How often to check in. Default is 30 minutes - like a regular check-in.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"30m"</code>, <code>"1h"</code>, <code>"5m"</code><br>
+                        Default: <code>"30m"</code> | Use <code>"0m"</code> to disable
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">activeHours.start</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Don't bother me before this time. Morning people set 6 AM, night owls set noon.
+                    </div>
+                    <div class="technical">
+                        Format: <code>"HH:MM"</code><br>
+                        Example: <code>"09:00"</code>
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">activeHours.end</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Stop checking after this time. Sleep hours = no interruptions.
+                    </div>
+                    <div class="technical">
+                        Format: <code>"HH:MM"</code><br>
+                        Example: <code>"22:00"</code> (10 PM)<br>
+                        Use <code>"24:00"</code> for end of day
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">activeHours.timezone</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Which timezone to use for active hours. Keeps your schedule consistent.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"America/New_York"</code>, <code>"Asia/Jerusalem"</code><br>
+                        Default: your userTimezone or host timezone
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Session & Context</h3>
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">session</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Which session to run the heartbeat in. Default main, but can target specific channels. <strong>(non-isolated only)</strong>
+                    </div>
+                    <div class="technical">
+                        <code>"main"</code> = default session<br>
+                        Or specific session key from <code>openclaw sessions</code>
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">isolatedSession</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Start fresh each time without your chat history. Way cheaper on tokens!
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = fresh session, ~2-5K tokens<br>
+                        <code>false</code> = full history, ~100K+ tokens
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">lightContext</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Only load HEARTBEAT.md, skip all other workspace files. Faster and cheaper.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = only HEARTBEAT.md<br>
+                        <code>false</code> = full workspace (default)
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Delivery</h3>
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">target</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Where to send heartbeat alerts. "last" = wherever you last talked. or choose channel ("whatsapp", "telegram").
+                    </div>
+                    <div class="technical">
+                        <code>"none"</code> = don't send anywhere (default)<br>
+                        <code>"last"</code> = last used channel<br>
+                        <code>"whatsapp"</code>, <code>"telegram"</code>, etc. = send to that channel
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">to</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Specific phone number or chat ID to send to. Overrides the target default.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"+15551234567"</code><br>
+                        Or Telegram: <code>"12345678:topic:42"</code>
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">accountId</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> For multi-account channels (like Telegram bots). Send from a specific account.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"ops-bot"</code><br>
+                        Matches channel accounts config
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">directPolicy</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Allow or block direct messages (DMs). Useful for group chats.
+                    </div>
+                    <div class="technical">
+                        <str>"allow"</str> = allow DM delivery (default)<br>
+                        <str>"block"</str> = suppress DM delivery
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Model & Reasoning</h3>
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">model</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Use a different (usually cheaper) model for heartbeat checks.
+                    </div>
+                    <div class="technical">
+                        Example: <code>"ollama/llama3.2:1b"</code><br>
+                        Defaults to main session model
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">includeReasoning</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Also show the AI's "thinking" process. Like showing your work in math class.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = send separate Reasoning: message<br>
+                        <code>false</code> = answer only (default)
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Prompt & Response</h3>
+
+                        <!-- HEARTBEAT RESPONSE DELIVERY CONCEPT -->
+            <div class="card" style="margin-bottom: 30px; border-color: var(--heartbeat-color);">
+                <div class="card-header">
+                    <span class="card-title">📬 Heartbeat Response - What Do You See?</span>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--accent); margin-top: 0;">⚙️ The ackMaxChars Threshold</h4>
+                    <div class="technical">
+                        Default: <code>30</code> characters<br><br>
+                        If content after HEARTBEAT_OK is <strong>≤ 30 chars</strong> → sends <strong>NOTHING</strong> (not worth waking you up)<br>
+                        If content is <strong>> 30 chars</strong> → sends that content to you<br>
+                        If no HEARTBEAT_OK token at all → sends <strong>FULL response</strong>
+
+                        <br><br>ackMaxChars can be set.
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--accent); margin-top: 0;">⚙️ The showOk Parameter</h4>
+                    <div class="technical">
+                        Default: <code>false </code> <br><br>
+                        if <code> true </code> sends HEARTBEAT_OK 
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--accent); margin-top: 0;">⚙️ how to always get response</h4>
+                    <div class="technical">
+                        use ackMaxChars = 0 and showOk = true
+                    </div>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h4 style="color: var(--heartbeat-color); margin-top: 0;">🔍 How It Decides What to Send (default settings)</h4>
+                    <div class="idiot-proof" style="border-color: var(--heartbeat-color);">
+                        <strong>Simple explanation:</strong> The AI responds with "HEARTBEAT_OK" when nothing needs attention. If there's something important, it adds content after that token.
+                    </div>
+                    <div class="idiot-proof" style="border-color: var(--heartbeat-color);">
+                        <strong>AI says:</strong> "HEARTBEAT_OK" (nothing wrong) → <strong>you see NOTHING</strong> (skipped)
+                    </div>
+                    <div class="idiot-proof" style="border-color: var(--heartbeat-color);">
+                        <strong>AI says:</strong> "HEARTBEAT_OK check your inbox" → <strong>you see:</strong> "check your inbox" (content after the token, IF > 30 chars)
+                    </div>
+                    <div class="idiot-proof" style="border-color: var(--heartbeat-color);">
+                        <strong>AI says:</strong> "Checked inbox, found 3 urgent emails from client" → <strong>you see FULL response</strong> (no HEARTBEAT_OK token)
+                    </div>
+                </div>
+                
+
+            </div>
+
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">prompt</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Custom instructions for each heartbeat. <strong>Overrides</strong> the default "read HEARTBEAT.md" prompt.
+                    </div>
+                    <div class="technical">
+                        Default: <code>"Read HEARTBEAT.md if it exists..."</code><br>
+                        Custom prompt sent verbatim
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">ackMaxChars</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Threshold to decide if response should be delivered. If AI says "HEARTBEAT_OK" plus short content, skip it.
+                    </div>
+                    <div class="technical">
+                        Default: <code>30</code> characters<br>
+                        If response after HEARTBEAT_OK is ≤ this → sends nothing<br>
+                        If > this → sends content after HEARTBEAT_OK
+                    </div>
+                </div>
+                
+
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">suppressToolErrorWarnings</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Don't show tool errors in heartbeat responses. Cleaner, less noise.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = suppress warnings<br>
+                        <code>false</code> = show all errors (default)
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Visibility Controls (Per Channel)</h3>
+            <div class="grid">
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">showOk</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Show the "HEARTBEAT_OK" message when nothing is wrong.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = show OK messages<br>
+                        <code>false</code> = hide OK messages (default)
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">showAlerts</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Show actual alerts when something needs attention.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = show alerts (default)<br>
+                        <code>false</code> = suppress alerts
+                    </div>
+                </div>
+                
+                <div class="card heartbeat-card">
+                    <div class="card-header">
+                        <span class="card-title">useIndicator</span>
+                        <span class="card-type heartbeat">Heartbeat</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Show a typing indicator or status in the UI.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = show indicator (default)<br>
+                        <code>false</code> = no indicator
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2><span class="icon">⚙️</span> Global Cron Configuration</h2>
+            
+            <div class="section-intro">
+                <p>These settings go in the gateway config under the <code>cron</code> section. They control overall cron behavior, not individual jobs.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.enabled</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Turn all cron jobs on or off completely.
+                    </div>
+                    <div class="technical">
+                        <code>true</code> = enabled (default)<br>
+                        <code>false</code> = disabled
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.store</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>Where it saves jobs:</strong> Custom location for the jobs.json file.
+                    </div>
+                    <div class="technical">
+                        Default: <code>"~/.openclaw/cron/jobs.json"</code>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.maxConcurrentRuns</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How many cron jobs can run at the same time. More = faster but more resources.
+                    </div>
+                    <div class="technical">
+                        Default: <code>1</code><br>
+                        Increase for high-volume setups
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.sessionRetention</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How long to keep isolated cron session history before cleanup.
+                    </div>
+                    <div class="technical">
+                        Default: <code>"24h"</code><br>
+                        Set <code>false</code> to disable
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.runLog.maxBytes</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Maximum size of the run log file before it gets trimmed.
+                    </div>
+                    <div class="technical">
+                        Default: <code>"2mb"</code><br>
+                        Example: <code>"10mb"</code>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.runLog.keepLines</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> When trimming logs, keep only the newest N lines.
+                    </div>
+                    <div class="technical">
+                        Default: <code>2000</code> lines
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Retry Configuration</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.retry.maxAttempts</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> How many times to retry a failing one-shot job before giving up.
+                    </div>
+                    <div class="technical">
+                        Default: <code>3</code>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.retry.backoffMs</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Wait times between retries. Starts short, gets longer (exponential backoff).
+                    </div>
+                    <div class="technical">
+                        Default: <code>[60000, 120000, 300000]</code><br>
+                        1 min → 2 min → 5 min
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">cron.retry.retryOn</span>
+                        <span class="card-type global">Global</span>
+                    </div>
+                    <div class="idiot-proof">
+                        <strong>What it does:</strong> Which errors should trigger a retry. Network issues = yes, bad config = no.
+                    </div>
+                    <div class="technical">
+                        Options: <str>"rate_limit"</str>, <str>"overloaded"</str>, <str>"network"</str>, <str>"server_error"</str>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2><span class="icon">🎯</span> When to Use What</h2>
+            
+            <div class="when-to-use">
+                <div class="when-box cron">
+                    <h3><span class="icon">⏰</span> Use Cron When...</h3>
+                    <ul>
+                        <li>You need exact timing ("9:00 AM sharp")</li>
+                        <li>It's a one-shot reminder ("in 20 minutes")</li>
+                        <li>Task should run independently of main chat</li>
+                        <li>You want to use a different AI model</li>
+                        <li>Task is noisy/frequent - keep it out of main history</li>
+                        <li>Results should go to a specific channel</li>
+                    </ul>
+                </div>
+                
+                <div class="when-box heartbeat">
+                    <h3><span class="icon">💓</span> Use Heartbeat When...</h3>
+                    <ul>
+                        <li>Regular awareness checks (inbox, calendar)</li>
+                        <li>Can batch multiple checks together</li>
+                        <li>Needs full chat context to decide</li>
+                        <li>Timing can drift slightly (~30 min is fine)</li>
+                        <li>Want smart suppression if nothing to report</li>
+                        <li>Occasional check-in without scheduling</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2><span class="icon">📝</span> Example Configs</h2>
+            
+            <h3>Cron Job - Daily Morning Briefing</h3>
+            <div class="code-block">
+                <code>
+<span class="comment"># Run at 7 AM every day, send to WhatsApp</span>
+{
+  <span class="key">"name"</span>: <span class="string">"Morning briefing"</span>,
+  <span class="key">"schedule"</span>: { <span class="key">"kind"</span>: <span class="string">"cron"</span>, <span class="key">"expr"</span>: <span class="string">"0 7 * * *"</span>, <span class="key">"tz"</span>: <span class="string">"Asia/Jerusalem"</span> },
+  <span class="key">"sessionTarget"</span>: <span class="string">"isolated"</span>,
+  <span class="key">"payload"</span>: {
+    <span class="key">"kind"</span>: <span class="string">"agentTurn"</span>,
+    <span class="key">"message"</span>: <span class="string">"Generate today's briefing: weather, calendar, emails."</span>,
+    <span class="key">"model"</span>: <span class="string">"opus"</span>
+  },
+  <span class="key">"delivery"</span>: {
+    <span class="key">"mode"</span>: <span class="string">"announce"</span>,
+    <span class="key">"channel"</span>: <span class="string">"whatsapp"</span>,
+    <span class="key">"to"</span>: <span class="string">"+972542634114"</span>
+  }
+}
+                </code>
+            </div>
+            
+            <h3>Heartbeat - Periodic Awareness</h3>
+            <div class="code-block">
+                <code>
+<span class="comment"># Check every 30 minutes during daytime, deliver to last used channel</span>
+{
+  <span class="key">"heartbeat"</span>: {
+    <span class="key">"every"</span>: <span class="string">"30m"</span>,
+    <span class="key">"target"</span>: <span class="string">"last"</span>,
+    <span class="key">"lightContext"</span>: <span class="key">true</span>,
+    <span class="key">"activeHours"</span>: {
+      <span class="key">"start"</span>: <span class="string">"08:00"</span>,
+      <span class="key">"end"</span>: <span class="string">"23:00"</span>
+    }
+  }
+}
+                </code>
+            </div>
+            
+            <h3>One-Shot Reminder</h3>
+            <div class="code-block">
+                <code>
+<span class="comment"># Remind me in 20 minutes via main session</span>
+{
+  <span class="key">"name"</span>: <span class="string">"Meeting reminder"</span>,
+  <span class="key">"schedule"</span>: { <span class="key">"kind"</span>: <span class="string">"at"</span>, <span class="key">"at"</span>: <span class="string">"2026-03-22T18:30:00Z"</span> },
+  <span class="key">"sessionTarget"</span>: <span class="string">"main"</span>,
+  <span class="key">"wakeMode"</span>: <span class="string">"now"</span>,
+  <span class="key">"payload"</span>: {
+    <span class="key">"kind"</span>: <span class="string">"systemEvent"</span>,
+    <span class="key">"text"</span>: <span class="string">"Reminder: Standup meeting in 10 minutes!"</span>
+  },
+  <span class="key">"deleteAfterRun"</span>: <span class="key">true</span>
+}
+                </code>
+            </div>
+        </section>
+        
+        <footer>
+            <p>🦞 OpenClaw Automation Guide | Built with ❤️ for Ariel</p>
+        </footer>
+    </div>
+</body>
+</html>
