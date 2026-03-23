@@ -30,6 +30,9 @@ Three Tor integration scenarios for an AI assistant: half Tor (split routing for
 ### 8. [Cron vs Heartbeat — Timing, Sessions & Delivery](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/cron-heartbeat-docs.html)
 Complete reference for OpenClaw's scheduling system: Cron jobs (exact times, isolated sessions, manual/one-shot reminders) vs Heartbeats (periodic checks with main session context). Covers all config options including sessionTarget, payload types (systemEvent vs agentTurn), delivery modes, ackMaxChars threshold, lightContext, isolatedSession, and how response delivery actually works.
 
+### 9. [OpenClaw Personalization — Messages, Reasoning & Thinking](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/openclaw-personalize-messages.html)
+Complete guide to OpenClaw's personalization layers: Messages (queue modes, debounce, ack reactions, TTS), Reasoning (on/off/stream visibility), and Thinking (effort levels from off to xhigh). Includes practical config examples for WhatsApp bots, debug mode, and group chat optimization.
+
 ---
 
 ## Style Guide
