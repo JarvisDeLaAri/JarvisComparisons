@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hooks vs Plugins — OpenClaw Extension Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --accent-hooks: #22d3ee;
+            --accent-plugins: #c084fc;
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --border: #2a2a35;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(192, 132, 252, 0.08) 0%, transparent 50%);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-hooks) 0%, var(--accent-plugins) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin: 50px 0 25px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        h2 .icon {
+            font-size: 1.5rem;
+        }
+        
+        h2.hooks-title {
+            border-color: var(--accent-hooks);
+        }
+        
+        h2.plugins-title {
+            border-color: var(--accent-plugins);
+        }
+        
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--text-muted);
+        }
+        
+        .card.hooks {
+            border-top: 4px solid var(--accent-hooks);
+        }
+        
+        .card.plugins {
+            border-top: 4px solid var(--accent-plugins);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge.hooks {
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--accent-hooks);
+        }
+        
+        .badge.plugins {
+            background: rgba(192, 132, 252, 0.15);
+            color: var(--accent-plugins);
+        }
+        
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .card p.description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+        
+        .specs {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+        
+        .spec-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .spec-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .spec-value.green { color: var(--success); }
+        .spec-value.yellow { color: var(--warning); }
+        .spec-value.red { color: var(--danger); }
+        
+        h4 {
+            font-size: 1.2rem;
+            margin: 25px 0 15px 0;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            color: var(--text-secondary);
+        }
+        
+        li::before {
+            position: absolute;
+            left: 0;
+            top: 12px;
+            font-size: 1rem;
+        }
+        
+        .pros li::before {
+            content: "✓";
+            color: var(--success);
+        }
+        
+        .cons li::before {
+            content: "✗";
+            color: var(--danger);
+        }
+        
+        .verdict {
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(192, 132, 252, 0.1) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 50px 0;
+            text-align: center;
+        }
+        
+        .verdict h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .verdict p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .verdict strong {
+            color: var(--text-primary);
+        }
+        
+        .how-it-works {
+            margin: 50px 0;
+            padding: 30px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .how-it-works h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.6rem;
+        }
+        
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .flow-step {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .flow-step:not(:last-child)::after {
+            content: "→";
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--accent-hooks);
+            color: var(--bg-dark);
+            border-radius: 50%;
+            line-height: 30px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .step-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .bundle-note {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            color: var(--warning);
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .container { padding: 20px; }
+            .cards-container { grid-template-columns: 1fr; }
+            .flow-steps { grid-template-columns: 1fr; }
+            .flow-step:not(:last-child)::after {
+                content: "↓";
+                right: 50%;
+                top: auto;
+                bottom: -25px;
+                transform: translateX(50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🪝 Hooks vs Plugins</h1>
+            <p class="subtitle">When to use which — the practical guide for extending OpenClaw</p>
+        </header>
+        
+        <div class="cards-container">
+            <!-- HOOKS CARD -->
+            <div class="card hooks">
+                <span class="badge hooks">Built-in</span>
+                <h3>🪝 Hooks</h3>
+                <p class="description">Lightweight scripts that run inside the Gateway when specific events fire</p>
+                
+                <div class="specs">
+                    <div class="spec-row">
+                        <span class="spec-label">Setup</span>
+                        <span class="spec-value green">Zero config</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Run location</span>
+                        <span class="spec-value">Inside Gateway</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Trigger type</span>
+                        <span class="spec-value">Event-based</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Examples</span>
+                        <span class="spec-value">/new, /reset, /stop, lifecycle</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Complexity</span>
+                        <span class="spec-value green">Low</span>
+                    </div>
+                </div>
+                
+                <h4>✅ Pros</h4>
+                <ul class="pros">
+                    <li>Enabled by default (session-memory, command-logger, boot-md)</li>
+                    <li>No external dependencies</li>
+                    <li>Super fast — runs in-process</li>
+                    <li>Great for automation on session events</li>
+                    <li>TypeScript functions, simple</li>
+                </ul>
+                
+                <h4>❌ Cons</h4>
+                <ul class="cons">
+                    <li>Only responds to internal events</li>
+                    <li>Can't add new channels or model providers</li>
+                    <li>Limited to Gateway lifecycle</li>
+                    <li>Not for external integrations</li>
+                </ul>
+            </div>
+            
+            <!-- PLUGINS CARD -->
+            <div class="card plugins">
+                <span class="badge plugins">Extension</span>
+                <h3>🔌 Plugins</h3>
+                <p class="description">Full npm packages that extend OpenClaw with new capabilities</p>
+                
+                <div class="specs">
+                    <div class="spec-row">
+                        <span class="spec-label">Setup</span>
+                        <span class="spec-value yellow">Install + config</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Run location</span>
+                        <span class="spec-value">Separate process</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Trigger type</span>
+                        <span class="spec-value">On-demand</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Examples</span>
+                        <span class="spec-value">Matrix, Teams, Voice, web-search</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">Complexity</span>
+                        <span class="spec-value yellow">Medium-High</span>
+                    </div>
+                </div>
+                
+                <h4>✅ Pros</h4>
+                <ul class="pros">
+                    <li>Can add entirely new channels (WhatsApp, Discord, Matrix)</li>
+                    <li>New model providers</li>
+                    <li>Tools, speech, image generation</li>
+                    <li>Published on npm — easy install</li>
+                    <li>Can bundle hooks inside them</li>
+                </ul>
+                
+                <h4>❌ Cons</h4>
+                <ul class="cons">
+                    <li>Need to install & configure</li>
+                    <li>Restart gateway after install</li>
+                    <li>More moving parts</li>
+                    <li>Security: trust the npm package</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- HOW IT WORKS: PLUGINS -->
+        <div class="how-it-works">
+            <h3>🔌 How Plugins Work</h3>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Install</div>
+                    <div class="step-desc">openclaw plugins install @org/package</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Configure</div>
+                    <div class="step-desc">Add config in plugins.entries</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Restart</div>
+                    <div class="step-desc">openclaw gateway restart</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Use</div>
+                    <div class="step-desc">New channels/tools available</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HOW IT WORKS: HOOKS -->
+        <div class="how-it-works">
+            <h3>🪝 How Hooks Work</h3>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">List</div>
+                    <div class="step-desc">openclaw hooks list</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Enable</div>
+                    <div class="step-desc">openclaw hooks enable session-memory</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Trigger</div>
+                    <div class="step-desc">Event fires (/new, /reset, etc)</div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Run</div>
+                    <div class="step-desc">Hook executes in Gateway</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bundle-note">
+            <strong>💡 Pro tip:</strong> Plugins can <em>bundle</em> hooks inside them! So you can get both — new channels PLUS event automation in one package.
+        </div>
+        
+        <!-- VERDICT -->
+        <div class="verdict">
+            <h3>🎯 The Verdict</h3>
+            <p>
+                <strong>Use Hooks</strong> for internal automation — session logging, memory saves, audit trails, anything that reacts to your own commands.
+                <br><br>
+                <strong>Use Plugins</strong> when you need to connect to the outside world — new chat platforms, external APIs, model providers, or specialized tools.
+                <br><br>
+                Start with hooks for quick wins. Graduate to plugins when you need to scale or integrate.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

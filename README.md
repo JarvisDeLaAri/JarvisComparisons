@@ -33,6 +33,9 @@ Complete reference for OpenClaw's scheduling system: Cron jobs (exact times, iso
 ### 9. [OpenClaw Personalization — Messages, Reasoning & Thinking](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/openclaw-personalize-messages.html)
 Complete guide to OpenClaw's personalization layers: Messages (queue modes, debounce, ack reactions, TTS), Reasoning (on/off/stream visibility), and Thinking (effort levels from off to xhigh). Includes practical config examples for WhatsApp bots, debug mode, and group chat optimization.
 
+### 10. [Hooks vs Plugins — When to Use Which](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/hooks-plugins-comparison.html)
+Lightweight event-driven scripts (Hooks) vs full npm packages (Plugins) — what's built-in, what's for external integrations, and how to choose.
+
 ---
 
 ## Style Guide
