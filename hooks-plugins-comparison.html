@@ -291,15 +291,21 @@
         
         .step-number {
             display: inline-block;
-            /* width: 30px; */
-            /* height: 30px; */
-            padding: 12px;
+            width: 30px;
+            height: 30px;
             background: var(--accent-hooks);
             color: var(--bg-dark);
             border-radius: 50%;
-            line-height: normal;
+            line-height: 30px;
             font-weight: 700;
             margin-bottom: 10px;
+        }
+        
+        .step-number.wide-num-word {
+            width: auto;
+            height: auto;
+            padding: 12px;
+            line-height: normal;
         }
         
         .step-title {
@@ -445,35 +451,35 @@
             <h3>🪝 Full Hook Lifecycle — 26 Hook Points</h3>
             <div class="flow-steps" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
                 <div class="flow-step">
-                    <div class="step-number" style="background: var(--accent-hooks);">AGENT</div>
+                    <div class="step-number wide-num-word" style="background: var(--accent-hooks);">AGENT</div>
                     <div class="step-title">Agent Lifecycle</div>
                     <div class="step-desc">
                         <small style="color: var(--text-muted);">before_model_resolve, before_prompt_build, before_agent_start, llm_input, llm_output, agent_end, before_compaction, after_compaction, before_reset</small>
                     </div>
                 </div>
                 <div class="flow-step">
-                    <div class="step-number" style="background: var(--accent-hooks);">MESSAGE</div>
+                    <div class="step-number wide-num-word" style="background: var(--accent-hooks);">MESSAGE</div>
                     <div class="step-title">Message Flow</div>
                     <div class="step-desc">
                         <small style="color: var(--text-muted);">inbound_claim, message_received, before_dispatch, message_sending, message_sent</small>
                     </div>
                 </div>
                 <div class="flow-step">
-                    <div class="step-number" style="background: var(--accent-hooks);">TOOL</div>
+                    <div class="step-number wide-num-word" style="background: var(--accent-hooks);">TOOL</div>
                     <div class="step-title">Tool Execution</div>
                     <div class="step-desc">
                         <small style="color: var(--text-muted);">before_tool_call, after_tool_call, tool_result_persist, before_message_write</small>
                     </div>
                 </div>
                 <div class="flow-step">
-                    <div class="step-number" style="background: var(--accent-hooks);">SESSION</div>
+                    <div class="step-number wide-num-word" style="background: var(--accent-hooks);">SESSION</div>
                     <div class="step-title">Session Events</div>
                     <div class="step-desc">
                         <small style="color: var(--text-muted);">session_start, session_end, subagent_spawning, subagent_delivery_target, subagent_spawned, subagent_ended</small>
                     </div>
                 </div>
                 <div class="flow-step">
-                    <div class="step-number" style="background: var(--accent-hooks);">GATEWAY</div>
+                    <div class="step-number wide-num-word" style="background: var(--accent-hooks);">GATEWAY</div>
                     <div class="step-title">Gateway Lifecycle</div>
                     <div class="step-desc">
                         <small style="color: var(--text-muted);">gateway_start, gateway_stop</small>
