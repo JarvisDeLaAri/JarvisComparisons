@@ -327,6 +327,102 @@
             color: var(--warning);
             font-size: 1rem;
         }
+
+        .message-flow-visual {
+            margin: 28px 0;
+            padding: 28px;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(34, 211, 238, 0.07) 0%, rgba(34, 211, 238, 0.02) 100%);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+        }
+
+        .message-lane {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(180px, 1fr));
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .event-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .event-card:not(:last-child)::after {
+            content: "→";
+            position: absolute;
+            right: -13px;
+            top: 18px;
+            color: var(--accent-hooks);
+            font-weight: 900;
+            font-size: 1.15rem;
+        }
+
+        .event-name {
+            color: var(--accent-hooks);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .event-purpose {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .event-details {
+            margin-top: 10px;
+            color: #b4c6cf;
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .signature-block {
+            margin: 26px 0;
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #0d1018;
+        }
+
+        .signature-header {
+            padding: 14px 18px;
+            background: rgba(34, 211, 238, 0.12);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.28);
+            color: var(--accent-hooks);
+            font-weight: 700;
+            font-size: 0.98rem;
+        }
+
+        .signature-code {
+            margin: 0;
+            padding: 20px;
+            white-space: pre;
+            overflow-x: auto;
+            color: #d7e4ea;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        @media (max-width: 960px) {
+            .message-lane {
+                grid-template-columns: 1fr;
+            }
+            .event-card:not(:last-child)::after {
+                content: "↓";
+                left: 50%;
+                right: auto;
+                top: auto;
+                bottom: -16px;
+                transform: translateX(-50%);
+            }
+        }
         
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
@@ -486,6 +582,166 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="message-flow-visual">
+            <h3 style="margin-bottom: 18px; text-align: left; font-size: 1.5rem;">📨 Message Flow — Visual Event Timeline</h3>
+            <div class="message-lane">
+                <div class="event-card">
+                    <div class="event-name">inbound_claim</div>
+                    <div class="event-purpose">First hook point when a raw inbound packet arrives.</div>
+                    <div class="event-details">Use it to claim ownership, tag inbound metadata, or short-circuit duplicate channel packets before they become user-visible messages.</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-name">message_received</div>
+                    <div class="event-purpose">Normalized inbound message is accepted into the session pipeline.</div>
+                    <div class="event-details">Best place for analytics, policy checks, enrichment (labels, language hints), or early command detection.</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-name">before_dispatch</div>
+                    <div class="event-purpose">Gateway is about to dispatch the turn to agent/runtime.</div>
+                    <div class="event-details">Perfect for routing overrides, safety preflight, session target rewriting, or context patching before model work starts.</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-name">message_sending</div>
+                    <div class="event-purpose">Outbound message is prepared, but not yet sent to the provider.</div>
+                    <div class="event-details">Hook for redaction, formatting transforms, attachment checks, fallback channel logic, and final compliance filtering.</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-name">message_sent</div>
+                    <div class="event-purpose">Provider accepted outbound payload and returned delivery metadata.</div>
+                    <div class="event-details">Use for durable logging, delivery audits, success metrics, and post-send automations keyed by message id.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-block">
+            <div class="signature-header">🧾 Message Flow Event Signatures (TypeScript, full typed members)</div>
+            <pre class="signature-code">type HookEventName =
+  | 'inbound_claim'
+  | 'message_received'
+  | 'before_dispatch'
+  | 'message_sending'
+  | 'message_sent';
+
+type ChannelId =
+  | 'telegram' | 'whatsapp' | 'discord' | 'slack' | 'signal'
+  | 'imessage' | 'line' | 'irc' | 'googlechat' | string;
+
+interface InboundEnvelope {
+  id: string;
+  channel: ChannelId;
+  accountId: string;
+  chatId: string;
+  senderId: string;
+  senderLabel?: string;
+  text?: string;
+  quotedText?: string;
+  media?: {
+    kind: 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'unknown';
+    mimeType?: string;
+    fileName?: string;
+    sizeBytes?: number;
+    localPath?: string;
+    url?: string;
+  };
+  timestampMs: number;
+  raw: Record&lt;string, unknown&gt;;
+}
+
+interface OutboundEnvelope {
+  idempotencyKey?: string;
+  channel: ChannelId;
+  accountId: string;
+  target: string;
+  message?: string;
+  caption?: string;
+  media?: {
+    localPath?: string;
+    url?: string;
+    mimeType?: string;
+    fileName?: string;
+    asVoice?: boolean;
+  };
+  replyToMessageId?: string;
+  threadId?: string;
+  silent?: boolean;
+}
+
+interface HookRuntime {
+  sessionKey?: string;
+  runId?: string;
+  nowIso: string;
+  isMainSession: boolean;
+}
+
+interface InboundClaimEvent {
+  name: 'inbound_claim';
+  inbound: InboundEnvelope;
+  runtime: HookRuntime;
+  claim: {
+    handled: boolean;
+    reason?: string;
+    by?: string;
+  };
+}
+
+interface MessageReceivedEvent {
+  name: 'message_received';
+  inbound: InboundEnvelope;
+  runtime: HookRuntime;
+  session: {
+    key: string;
+    exists: boolean;
+    createdNow: boolean;
+  };
+}
+
+interface BeforeDispatchEvent {
+  name: 'before_dispatch';
+  inbound: InboundEnvelope;
+  runtime: HookRuntime;
+  dispatch: {
+    sessionKey: string;
+    agentId: string;
+    mode: 'main' | 'isolated' | 'thread';
+    priority?: 'normal' | 'high';
+  };
+}
+
+interface MessageSendingEvent {
+  name: 'message_sending';
+  outbound: OutboundEnvelope;
+  runtime: HookRuntime;
+  context: {
+    sourceSessionKey?: string;
+    sourceMessageId?: string;
+    generatedBy: 'agent' | 'tool' | 'system' | 'cron';
+  };
+}
+
+interface MessageSentEvent {
+  name: 'message_sent';
+  outbound: OutboundEnvelope;
+  runtime: HookRuntime;
+  providerResult: {
+    accepted: boolean;
+    messageId?: string;
+    provider: string;
+    channel: ChannelId;
+    status?: 'sent' | 'queued' | 'failed';
+    error?: string;
+  };
+}
+
+type MessageFlowEvent =
+  | InboundClaimEvent
+  | MessageReceivedEvent
+  | BeforeDispatchEvent
+  | MessageSendingEvent
+  | MessageSentEvent;
+
+type MessageFlowHook = (event: MessageFlowEvent) =&gt; Promise&lt;void&gt; | void;</pre>
         </div>
         
         <!-- PLUGIN LIFECYCLE -->
