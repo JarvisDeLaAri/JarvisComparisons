@@ -424,6 +424,66 @@
             <h1>⏰ Cron vs Heartbeat</h1>
             <p class="subtitle">Complete guide to OpenClaw automation settings. Everything you need to know about scheduling and periodic checks.</p>
         </header>
+
+
+        <section>
+            <h2><span class="icon">💬</span> Delivery</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Flow (Default)</th>
+                        <th><span class="tag cron">systemEvent / Heartbeat</span></th>
+                        <th><span class="tag heartbeat">agentTurn / isolatedSession</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Context</strong></td>
+                        <td>Full Conversation History</td>
+                        <td>none</td>
+                    </tr>
+                    <tr>
+                        <td><strong>System Prompt</strong></td>
+                        <td>Full Conversation History</td>
+                        <td>none / agent md files</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prompt</strong></td>
+                        <td>as in cron / HEARTBEAT.md</td>
+                        <td>as in cron / HEARTBEAT.md</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Proccess</strong></td>
+                        <td>Internaly</td>
+                        <td>Internaly</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Session Log</strong></td>
+                        <td>Main session (written to conversation history)</td>
+                        <td>Private session</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delivery</strong></td>
+                        <td>Announce to channel (message)</td>
+                        <td>Announce to channel (message)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>On Human Response</strong></td>
+                        <td>Model receive conversation history WITH Announce (message)</td>
+                        <td>Model receive conversation history WITHOUT Announce (message)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>On Agent Response</strong></td>
+                        <td>Fully aware of the Announce (message)</td>
+                        <td>NOT aware of the Announce (message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+
+
         
         <section>
             <h2><span class="icon">⚡</span> Quick Comparison</h2>
