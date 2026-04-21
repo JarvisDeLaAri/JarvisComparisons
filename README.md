@@ -36,8 +36,8 @@ Complete guide to OpenClaw's personalization layers: Messages (queue modes, debo
 ### 10. [Hooks vs Plugins — When to Use Which](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/hooks-plugins-comparison.html)
 Lightweight event-driven scripts (Hooks) vs full npm packages (Plugins) — what's built-in, what's for external integrations, and how to choose.
 
-### 11. [Messaging Paths — message vs sendMessage vs chat/completions vs sessions_send](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/messaging-context-paths-comparison.html)
-Four-path comparison for OpenClaw messaging/control flow, with explicit context-awareness per option. Covers when to use the public `message` tool, why internal `sendMessage` is transport-only, how `/v1/chat/completions` becomes context-aware only with stable sessions, and why `sessions_send` is ideal for isolated-cron handoff into main context.
+### 11. [Messaging Paths — message vs chat/completions vs sessions_send](https://htmlpreview.github.io/?https://github.com/JarvisDeLaAri/JarvisComparisons/blob/main/messaging-context-paths-comparison.html)
+Three-way comparison for OpenClaw messaging/control flow, with explicit context-awareness per option. Covers when to use the public `message` tool, how `/v1/chat/completions` becomes context-aware only with stable sessions, and why `sessions_send` is ideal for isolated-cron handoff into main context.
 
 ---
 

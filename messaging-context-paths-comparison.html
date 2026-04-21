@@ -3,223 +3,221 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenClaw Messaging Paths — Context Aware Comparison</title>
+  <title>OpenClaw Messaging Paths — Context Compare</title>
   <style>
     :root {
-      --bg: #071426;
-      --panel: #0f2139;
-      --text: #e7eef8;
-      --muted: #a9b8cc;
-      --ok: #35d07f;
-      --warn: #f5c451;
-      --bad: #ff6b6b;
-      --blue: #59a7ff;
-      --purple: #a78bfa;
-      --orange: #fb923c;
-      --teal: #2dd4bf;
-      --line: #22354f;
+      --bg-dark: #0a0a0f;
+      --bg-card: #12121a;
+      --text-primary: #f0f0f5;
+      --text-secondary: #a0a0b0;
+      --border: #2a2a35;
+      --accent: #ff6b9d;
+      --accent-secondary: #c084fc;
+      --accent-tertiary: #22d3ee;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --muted: #606070;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      font-family: Inter, Segoe UI, Arial, sans-serif;
-      background: radial-gradient(circle at top, #0d2544 0%, var(--bg) 45%);
-      color: var(--text);
-      line-height: 1.45;
-      padding: 24px;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.7;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
     }
 
-    .wrap {
-      max-width: 1400px;
+    .container {
+      max-width: 1200px;
       margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border);
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 34px;
-    }
-
-    .sub {
-      margin: 0 0 20px;
-      color: var(--muted);
-      font-size: 18px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(320px, 1fr));
-      gap: 16px;
-      margin-top: 18px;
-    }
-
-    .card {
-      background: linear-gradient(180deg, #122845 0%, #0e2038 100%);
-      border: 1px solid var(--line);
-      border-left: 6px solid var(--blue);
-      border-radius: 14px;
-      padding: 16px;
-    }
-
-    .card.purple { border-left-color: var(--purple); }
-    .card.orange { border-left-color: var(--orange); }
-    .card.teal { border-left-color: var(--teal); }
-
-    .badge {
-      display: inline-block;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      background: #1a3354;
-      color: #c9dbf7;
-      border: 1px solid #2f4d74;
-      padding: 4px 8px;
-      border-radius: 999px;
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 50%, var(--accent-tertiary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 10px;
+      letter-spacing: -0.5px;
     }
 
-    .title {
-      margin: 0;
-      font-size: 24px;
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 900px;
+      margin: 0 auto;
     }
-
-    .desc {
-      color: var(--muted);
-      margin: 8px 0 12px;
-      font-size: 17px;
-    }
-
-    .spec {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .spec li {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px dashed #284364;
-      font-size: 16px;
-    }
-
-    .spec li:last-child { border-bottom: 0; }
-
-    .k { color: #c7d6eb; }
-
-    .tag {
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      display: inline-block;
-      white-space: nowrap;
-    }
-
-    .yes { background: rgba(53, 208, 127, 0.18); color: #7ff0b1; border: 1px solid rgba(53,208,127,0.45); }
-    .no { background: rgba(255, 107, 107, 0.18); color: #ff9a9a; border: 1px solid rgba(255,107,107,0.45); }
-    .maybe { background: rgba(245, 196, 81, 0.2); color: #ffd879; border: 1px solid rgba(245,196,81,0.45); }
 
     .section {
-      margin-top: 22px;
-      padding: 14px;
+      margin-bottom: 30px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      background: #0d2037;
-      border: 1px solid #26425f;
+      padding: 20px;
     }
 
-    .section h2 {
-      margin: 0 0 8px;
-      font-size: 22px;
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: var(--text-primary);
     }
 
-    .section p, .section li {
-      font-size: 17px;
-      color: #d8e4f5;
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    .section ul { margin: 6px 0 0 18px; }
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
 
-    @media (max-width: 920px) {
-      .cards { grid-template-columns: 1fr; }
-      h1 { font-size: 28px; }
+    .comparison-table th {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
+
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .tag.ok { background: rgba(16,185,129,0.2); color: #86efac; }
+    .tag.warn { background: rgba(245,158,11,0.2); color: #fcd34d; }
+    .tag.info { background: rgba(34,211,238,0.2); color: #67e8f9; }
+
+    .code-block {
+      background: #0d0d12;
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    code {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      color: #d1d5db;
+      font-size: 0.92rem;
+    }
+
+    ul {
+      margin-left: 18px;
+      color: var(--text-secondary);
+    }
+
+    li { margin-bottom: 10px; }
+
+    .muted { color: var(--muted); font-size: 0.95rem; }
+
+    @media (max-width: 900px) {
+      h1 { font-size: 2rem; }
+      .comparison-table { font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>OpenClaw Messaging Paths — 4-Way Compare</h1>
-    <p class="sub">Message Tool vs Internal sendMessage vs /v1/chat/completions vs sessions_send, with explicit context-awareness rating.</p>
-
-    <div class="cards">
-      <article class="card">
-        <span class="badge">Public Agent Tool</span>
-        <h2 class="title">1) message tool</h2>
-        <p class="desc">Primary runtime tool for channel actions like send/react/poll, routed through OpenClaw core + plugins.</p>
-        <ul class="spec">
-          <li><span class="k">Context aware</span><span class="tag yes">YES</span></li>
-          <li><span class="k">Session continuity</span><span>Native</span></li>
-          <li><span class="k">Direct user delivery</span><span class="tag yes">YES</span></li>
-          <li><span class="k">Best for</span><span>Normal agent messaging</span></li>
-          <li><span class="k">Risk</span><span>Low (policy governed)</span></li>
-        </ul>
-      </article>
-
-      <article class="card purple">
-        <span class="badge">Internal Runtime Function</span>
-        <h2 class="title">2) sendMessage (internal)</h2>
-        <p class="desc">Core outbound plumbing used under the hood by tool/plugin layers. Not a normal user-facing orchestration entrypoint.</p>
-        <ul class="spec">
-          <li><span class="k">Context aware</span><span class="tag no">NO</span></li>
-          <li><span class="k">Session continuity</span><span>Not by itself</span></li>
-          <li><span class="k">Direct user delivery</span><span class="tag yes">YES</span></li>
-          <li><span class="k">Best for</span><span>Core/plugin implementation</span></li>
-          <li><span class="k">Risk</span><span>High misuse potential</span></li>
-        </ul>
-      </article>
-
-      <article class="card orange">
-        <span class="badge">HTTP Integration Surface</span>
-        <h2 class="title">3) /v1/chat/completions</h2>
-        <p class="desc">OpenAI-compatible gateway endpoint. Executes as normal agent run, good for external apps and API integrations.</p>
-        <ul class="spec">
-          <li><span class="k">Context aware</span><span class="tag maybe">PARTIAL</span></li>
-          <li><span class="k">Session continuity</span><span>Needs stable <code>user</code>/session key</span></li>
-          <li><span class="k">Direct user delivery</span><span class="tag maybe">By flow</span></li>
-          <li><span class="k">Best for</span><span>OpenWebUI / custom clients</span></li>
-          <li><span class="k">Risk</span><span>Operator surface exposure</span></li>
-        </ul>
-      </article>
-
-      <article class="card teal">
-        <span class="badge">Cross-Session Handoff</span>
-        <h2 class="title">4) sessions_send</h2>
-        <p class="desc">Injects a message into a target session and lets that target agent answer with its own context and policies.</p>
-        <ul class="spec">
-          <li><span class="k">Context aware</span><span class="tag yes">YES (target session)</span></li>
-          <li><span class="k">Session continuity</span><span>Strong in target session</span></li>
-          <li><span class="k">Direct user delivery</span><span class="tag maybe">Via target logic</span></li>
-          <li><span class="k">Best for</span><span>Isolated cron -> main handoff</span></li>
-          <li><span class="k">Risk</span><span>Wrong target = wrong context</span></li>
-        </ul>
-      </article>
-    </div>
+  <div class="container">
+    <header>
+      <h1>OpenClaw Messaging Paths</h1>
+      <p class="subtitle">3-way comparison: <code>message</code> tool vs <code>/v1/chat/completions</code> vs <code>sessions_send</code>.</p>
+    </header>
 
     <section class="section">
-      <h2>Context-awareness truth table</h2>
+      <h2>💬 Delivery Table</h2>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Context aware</th>
+            <th>Session continuity</th>
+            <th>Direct user delivery</th>
+            <th>Best for</th>
+            <th>Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1) message tool</strong><br><span class="muted">openclaw message send</span></td>
+            <td><span class="tag info">LOGGED</span></td>
+            <td>Native transcript logging</td>
+            <td><span class="tag ok">YES</span></td>
+            <td>Outbound channel sends (WhatsApp/Telegram/etc.)</td>
+            <td>Low (policy governed)</td>
+          </tr>
+          <tr>
+            <td><strong>2) /v1/chat/completions</strong></td>
+            <td><span class="tag warn">PARTIAL</span></td>
+            <td>Needs stable session key/user pinning</td>
+            <td>By flow</td>
+            <td>External app/API integrations</td>
+            <td>Surface/config mistakes can break continuity</td>
+          </tr>
+          <tr>
+            <td><strong>3) sessions_send</strong></td>
+            <td><span class="tag ok">YES</span><br><span class="muted">(target session)</span></td>
+            <td>Strong in destination session</td>
+            <td>Via target logic</td>
+            <td>Cross-session handoff (cron → main)</td>
+            <td>Wrong target = wrong context</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>✅ Context truth</h2>
       <ul>
-        <li><strong>message tool:</strong> yes, because it runs in the active agent session transcript.</li>
-        <li><strong>sendMessage internal:</strong> no, transport-level function, no conversational brain.</li>
-        <li><strong>/v1/chat/completions:</strong> can be yes, but only if session is pinned (stable user/session key). Stateless calls are not context aware.</li>
-        <li><strong>sessions_send:</strong> yes, in the target session only. Context follows the destination transcript.</li>
+        <li><strong>message tool:</strong> logged in context, but it is outbound assistant delivery, not a user-role instruction.</li>
+        <li><strong>/v1/chat/completions:</strong> context-aware only when you pin session identity consistently.</li>
+        <li><strong>sessions_send:</strong> context-aware in the target session transcript.</li>
       </ul>
     </section>
 
     <section class="section">
-      <h2>Verdict (Ariel-style)</h2>
-      <p><strong>For your fitness flow:</strong> isolated cron dispatcher + <code>sessions_send</code> handoff to main + main uses <code>message</code> tool. That gives silent cron when no shout is needed, and real context-awareness when you reply.</p>
+      <h2>🧪 Examples</h2>
+
+      <p><strong>1) message tool (requested example)</strong></p>
+      <div class="code-block"><code>openclaw message send --channel whatsapp --target +972542634114 --message "send me a cow emoji and explain why"</code></div>
+
+      <p style="margin-top:14px;"><strong>2) sessions_send</strong></p>
+      <div class="code-block"><code>openclaw sessions send --session agent:main:whatsapp:direct:+972542634114 --message "send me a sheep emoji and explain why"</code></div>
+
+      <p style="margin-top:14px;"><strong>3) /v1/chat/completions (pinned)</strong></p>
+      <div class="code-block"><code>curl -sS "$OPENCLAW_URL/v1/chat/completions" -H "Authorization: Bearer $OPENCLAW_TOKEN" -H "Content-Type: application/json" -d '{"model":"openai-codex/gpt-5.3-codex","user":"agent:main:whatsapp:direct:+972542634114","messages":[{"role":"user","content":"send me a sheep emoji and explain why"}]}'</code></div>
     </section>
   </div>
 </body>
