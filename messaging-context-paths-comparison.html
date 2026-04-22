@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <title>OpenClaw Communications Paths — Context Compare</title>
   <style>
     :root {
@@ -252,7 +253,7 @@
 
     <section class="section">
       <h2>📎 Full source capture, 2026-04-21</h2>
-      <div class="code-block"><pre class="source-text">
+      <div class="code-block"><pre class="source-text" id="md">
 
 # OpenClaw Communications Paths
 
@@ -576,5 +577,10 @@ also in wa no perfix rules, in http yes perfix rules ([openclaw] 🦞)
       </pre></div>
     </section>
   </div>
+
+  <script>
+  const md = document.getElementById('md').innerHTML;
+  document.getElementById('md').innerHTML = marked.parse(md);
+</script>
 </body>
 </html>
