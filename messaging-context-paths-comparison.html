@@ -205,16 +205,7 @@
       <p class="subtitle">Goal: get instructions into the main session, decide whether WhatsApp should speak back, and keep the transcript honest, with the full source log preserved below.</p>
     </header>
 
-    <section class="section">
-      <h2>🧭 Quick takeaways</h2>
-      <ul>
-        <li><strong>message tool:</strong> writes into the active session transcript as an assistant turn, and can deliver to WhatsApp.</li>
-        <li><strong>sessions_send:</strong> injects into the target session, triggers an agent turn, and stays silent unless the target path sends outward.</li>
-        <li><strong>/v1/chat/completions:</strong> works only when the gateway endpoint is enabled and auth matches, then it can be pinned to a session key.</li>
-        <li><strong>/v1/chat/completions gotcha:</strong> on huge sessions, it can drag compaction/flush behavior into the party, which is rude but real.</li>
-        <li><strong>best combo:</strong> cron timing, <code>sessions_send</code> for instruction, <code>message</code> for human-visible delivery.</li>
-      </ul>
-    </section>
+
 
     <section class="section">
       <h2>💬 Delivery Table</h2>
@@ -226,63 +217,39 @@
             <th>Session continuity</th>
             <th>Direct user delivery</th>
             <th>Best for</th>
-            <th>Risk</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>1) message tool</strong><br><span class="muted">openclaw message send</span></td>
+            <td><strong>message tool</strong><br><span class="muted">openclaw message send</span></td>
             <td><span class="tag info">LOGGED</span></td>
             <td>Logged as assistant turn in transcript</td>
             <td><span class="tag ok">YES</span></td>
-            <td>Outbound channel sends, with no duplicate in-session reply</td>
-            <td>Low (policy governed)</td>
+            <td>Outbound channel sends, with no duplicate in-session reply (just notify user)</td>
           </tr>
           <tr>
-            <td><strong>2) /v1/chat/completions</strong></td>
-            <td><span class="tag warn">PARTIAL</span></td>
-            <td>Needs stable session key/user pinning, plus enabled endpoint/auth</td>
-            <td>By flow</td>
-            <td>External app/API integrations and pinned session tests</td>
-            <td>Surface/config mistakes can break continuity, block the endpoint, or trigger flush/compaction weirdness</td>
+            <td><strong>sessions_send</strong></td>
+            <td><span class="tag ok">YES</span></td>
+            <td><span class="tag ok">YES</span></td>
+            <td><span class="tag info">HIDDEN</span></td>
+            <td>Trigger Agent Turn</td>
           </tr>
           <tr>
-            <td><strong>3) sessions_send</strong></td>
-            <td><span class="tag ok">YES</span><br><span class="muted">(target session)</span></td>
-            <td>Strong in destination session</td>
-            <td>Via target logic, silent by default</td>
-            <td>Cross-session handoff (cron → main)</td>
-            <td>Wrong target = wrong context</td>
+            <td><strong>/v1/chat/completions</strong></td>
+            <td><span class="tag warn">YES</span></td>
+            <td><span class="tag ok">YES</span></td>
+            <td><span class="tag info">HIDDEN</span></td>
+            <td>External app/API integrations for Trigger Agent Turn</td>
           </tr>
+
         </tbody>
       </table>
     </section>
 
-    <section class="section">
-      <h2>✅ Context truth</h2>
-      <ul>
-        <li><strong>message tool:</strong> logged in context, but it is outbound assistant delivery, not a user-role instruction.</li>
-        <li><strong>/v1/chat/completions:</strong> context-aware only when you pin session identity consistently.</li>
-        <li><strong>sessions_send:</strong> context-aware in the target session transcript.</li>
-      </ul>
-    </section>
 
-    <section class="section">
-      <h2>🧪 Examples</h2>
-
-      <p><strong>1) message tool (requested example)</strong></p>
-      <div class="code-block"><code>openclaw message send --channel whatsapp --target +972542634114 --message "send me a cow emoji and explain why"</code></div>
-
-      <p style="margin-top:14px;"><strong>2) sessions_send</strong></p>
-      <div class="code-block"><code>openclaw sessions send --session agent:main:whatsapp:direct:+972542634114 --message "send me a sheep emoji and explain why"</code></div>
-
-      <p style="margin-top:14px;"><strong>3) /v1/chat/completions (pinned)</strong></p>
-      <div class="code-block"><code>curl -sS "$OPENCLAW_URL/v1/chat/completions" -H "Authorization: Bearer $OPENCLAW_TOKEN" -H "Content-Type: application/json" -d '{"model":"openai-codex/gpt-5.3-codex","user":"agent:main:whatsapp:direct:+972542634114","messages":[{"role":"user","content":"send me a sheep emoji and explain why"}]}'</code></div>
-    </section>
 
     <section class="section">
       <h2>📎 Full source capture, 2026-04-21</h2>
-      <p class="muted">All content from the comms log, converted to real HTML without trimming.</p>
       <div class="source-html">
         <h1>OpenClaw Communications Paths</h1>
         <p>GOAL is to understand what tools and how we can use them to communicate with our main agent in our main session and get response</p>
