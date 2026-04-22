@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <title>OpenClaw Communications Paths — Context Compare</title>
   <style>
     :root {
@@ -26,7 +25,7 @@
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg-dark);
       color: var(--text-primary);
-      line-height: 1.7;
+      line-height: 1.45;
       min-height: 100vh;
       background-image:
         radial-gradient(ellipse at 20% 0%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
@@ -133,12 +132,13 @@
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 0.92rem;
-      line-height: 1.65;
+      line-height: 1.35;
     }
 
 
     .source-html {
       color: var(--text-primary);
+      line-height: 1.35;
     }
 
     .source-html h1,
@@ -253,216 +253,207 @@
 
     <section class="section">
       <h2>📎 Full source capture, 2026-04-21</h2>
-      <div class=""><pre class="source-text">
-
-      <div id="out"><h1>OpenClaw Communications Paths</h1>
-<p>GOAL is to understand what tools and how we can use them to communicate with our main agent in our main session and get response</p>
-<p>MEANING <strong>how can i send a message to my agent for him to act upon</strong></p>
-<p>TIP - u need to use 2 tools (send/http + message)</p>
-<p>general rules about this file:</p>
-<ol>
-<li>testing with terminal -&gt; whatsapp</li>
-<li>session = context = conversation history sent to model.</li>
-<li>testing the session loggin is by asking my agent in wa to <code>write me last 10 messages</code></li>
-<li>NO session means not logged to our main session in whatsapp</li>
-</ol>
-<p><br><br></p>
-<h1>the use case</h1>
-<ol>
-<li>i want a trainer cron that check the time and if its 3-6 pm send me every 30 min a message to jump, look at how many jumps i did yesterday and ask for 1 more</li>
-<li>i want a security cron that check this server and notify me only if something is important, but act immediately, dont wait for my response</li>
-</ol>
-<p>so ye, you can you a heartbeat, but maybe you want a cron? a cron (with System Event) always reply something... </p>
-<p>so you want something to be done AND conditionaly sent to you AND activate the agent?</p>
-<h3>solution</h3>
-<p>this is the workflow:</p>
-<ol>
-<li>cron for timing</li>
-<li>session_send tool for instructions</li>
-<li>include condition for notification </li>
-<li>ask to be notified with message tool</li>
-</ol>
-<p><br><br></p>
-<h1>the Message tool</h1>
-<br>
-
-<h2>1. simple cli</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>openclaw message send --channel whatsapp --target +972542634114 --message "send me a sheep emoji and explain why"</code></p>
-<p><strong>WHATSAPP</strong></p>
-<p>got <code>send me a cow emoji and explain why</code> message with not follow up</p>
-<p><strong>SESSION</strong></p>
-<p>asking agent <code>write me last 10 messages</code> revealed</p>
-<pre><code>9) Assistant: “send me a sheep emoji and explain why”  
-10) User: “write me last 10 messages”
-</code></pre>
-<p><strong>CONCLUSION</strong></p>
-<p>the message tool LOGS the message to the session context, but at <code>Assistant</code> turn, and therefor the Assistant does not replies.</p>
-<br>
-
-<h2>2. simple cli + agent</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>openclaw agent --channel whatsapp --to +972542634114 --message "send me a cow sheep and explain why" </code></p>
-<p><strong>WHATSAPP</strong></p>
-<p>nothing</p>
-<p><strong>SESSION</strong></p>
-<p>NO (private)</p>
-<p><strong>CONCLUSION</strong></p>
-<p>this method just initiates a new session in the terminal, and the agent responds in terminal. not relevant at all.</p>
-<br>
-
-<h2>3. simple cli + agent + deliver</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>openclaw agent --channel whatsapp --to +972542634114 --message "send me a cow emoji and explain why" --deliver</code></p>
-<p><strong>WHATSAPP</strong></p>
-<p><code>[openclaw] 🦞 🐄  Because cows are peak chill, steady, and unbothered. Basically the opposite of chaos. 🦞</code></p>
-<p><strong>SESSION</strong></p>
-<p>NO (private)</p>
-<p><strong>CONCLUSION</strong></p>
-<p>this method initiates a new session in the terminal, and the agent responds in terminal. BUT also send the response to whatsapp but is not even logged to main session, main agent would never know about it.</p>
-<p><br><br></p>
-<h1>the Session_Send tool</h1>
-<br>
-
-<h2>1. simple sessions.send (sessions_send)</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>openclaw gateway call sessions.send --params "{\"key\":\"agent:main:whatsapp:direct:+972542634114\",\"message\":\"send me a cow emoji and explain why\"}"</code></p>
-<p><strong>WHATSAPP</strong></p>
-<p>nothing</p>
-<p><strong>SESSION</strong></p>
-<p>yes, internal</p>
-<pre><code>8) User (cli): “send me a cow emoji and explain why”  
-9) Assistant: “🐄 Because cows are calm, obvious, and easy to spot...”  
-10) User: “write me last 10 messages”
-</code></pre>
-<p><strong>CONCLUSION</strong></p>
-<p>this does LOG the message to session and even triggers AGENT TURN to answer it, but both are SILENT</p>
-<p><br><br></p>
-<h1>the /v1/chat/completions tool</h1>
-<h2>1. simple /v1/chat/completions</h2>
-<h3>pre-requisites</h3>
-<p>simple is over-statement, the /v1/chat/completions tool must be allowed to be used via the settings file (<code>gateway.http.endpoints.chatCompletions.enabled = true</code> Auth must match <code>gateway.auth.mode</code>) and needs a little code to be invoked, so i used <code>3-chat-completions-pinned.sh</code>:</p>
-<pre><code>#!/usr/bin/env bash
-# Usage:
-#   ./3-chat-completions-pinned.sh "hi its ariel"
-# The first argument is sent as the user message content.
-
-MSG="${1:-TEST: /v1/chat/completions pinned session}"
-TOKEN="${OPENCLAW_GATEWAY_TOKEN:-$(python3 - &amp;lt;&amp;lt;'PY'
-import json; print(json.load(open('/root/.openclaw/openclaw.json')).get('gateway',{}).get('auth',{}).get('token',''))
-PY
-)}"
-PAYLOAD="$(jq -n --arg msg "$MSG" '{model:"openclaw/default",messages:[{role:"user",content:$msg}]}')"
-curl -sS http://127.0.0.1:18789/v1/chat/completions -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" -H "x-openclaw-session-key: agent:main:whatsapp:direct:+972542634114" -H "x-openclaw-message-channel: whatsapp" -d "$PAYLOAD"
-</code></pre>
-<p><strong>TERMINAL</strong></p>
-<p><code>./3-chat-completions-pinned.sh "send me a cow emoji and explain why"</code></p>
-<p>WITH RESULT:</p>
-<pre><code>{
-  "id": "chatcmpl_9de477ce-c11e-4712-94f9-5b4ded15e12b",
-  "object": "chat.completion",
-  "created": 1776810140,
-  "model": "openclaw/default",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "[openclaw] 🦞 🐄 Because it is a clear, unmistakable marker that this exact instruction was followed in-context. 🦞"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 86834,
-    "completion_tokens": 251,
-    "total_tokens": 87085
-  }
-}
-</code></pre>
-<p><strong>WHATSAPP</strong></p>
-<p>nothing</p>
-<p><strong>SESSION</strong></p>
-<pre><code>8) User: “send me a cow emoji and explain why”  
-9) Assistant: “🐄 Because it is a clear, unmistakable marker that this exact instruction was followed in-context.”  
-10) User: “write me last 10 messages”
-</code></pre>
-<p><strong>CONCLUSION</strong></p>
-<p>this does LOG the message to session and even triggers AGENT TURN to answer it, but both are SILENT to the channel but you do get the agent's response via HTTP</p>
-<p><br><br></p>
-<h1>the Combined WITH Message tools - Achieve GOAL</h1>
-<br>
-
-<h2>1. sessions.send with instuct for message tool</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>openclaw gateway call sessions.send --params "{\"key\":\"agent:main:whatsapp:direct:+972542634114\",\"message\":\"use message tool to send me via whatsapp a sheep emoji and explain why\"}"</code></p>
-<p><strong>WHATSAPP</strong></p>
-<p><code>[openclaw] 🦞 🐑 Because sheep are the perfect contrast to the cow test, still obvious, still unmistakable, and it proves the WhatsApp message-tool path is working end-to-end. 🦞</code></p>
-<p><strong>SESSION</strong></p>
-<pre><code>8) User (cli): “use message tool to send me via whatsapp a sheep emoji and explain why”  
-9) Assistant: “🐑 Because sheep are the perfect contrast to the cow test...”  
-10) User: “write me last 10 messages”
-</code></pre>
-<p><strong>CONCLUSION</strong></p>
-<p>this is actually using <strong>2 tools</strong> combination to achieve "full" goal of using a tool to trigger an agent turn and get a reaction and get it via human visible channel</p>
-<p>ACHIEVES GOAL - Agent Turn + Context Aware + Channel Response (+perfix rules)</p>
-<br>
-
-<h2>2. /v1/chat/completions with instuct for message tool</h2>
-<p><strong>TERMINAL</strong></p>
-<p><code>./3-chat-completions-pinned.sh "use message tool to send me via whatsapp a vodka emoji and explain why"</code></p>
-<p>WITH RESULT:</p>
-<pre><code>{
-  "id": "chatcmpl_9aa32f81-4d83-4db8-b838-f26e88319fff",
-  "object": "chat.completion",
-  "created": 1776811880,
-  "model": "openclaw/default",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "[openclaw] 🦞 🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in."
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 44722,
-    "completion_tokens": 717,
-    "total_tokens": 45439
-  }
-}
-</code></pre>
-<p><strong>WHATSAPP</strong></p>
-<p><code>🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in.</code></p>
-<p><strong>SESSION</strong></p>
-<pre><code>5) User: “use message tool to send me via whatsapp a vodka emoji and explain why”
-6) Assistant: “🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in.”
-7) Assistant: “NO_REPLY”
-8) User: “Pre-compaction memory flush...”
-9) Assistant: “NO_REPLY”
-10) User: “System: [2026-04-21 22:50:11 UTC] Compacted ... write me last 10 messages” 
-</code></pre>
-<p>asking the agent about the <code>why is the NO_REPLY twice and compaction ?</code> it responded :</p>
-<pre><code>1) *NO_REPLY #1*: after I sent your WhatsApp message via the `message` tool, I returned `NO_REPLY` in-session to avoid duplicate replies.
-2) *NO_REPLY #2*: after your memory-flush instruction, that flow is intentionally silent unless there is something to report.
-</code></pre>
-<p>which after testing it happened a second time....  i fought back for answers.... so yes, the /v1/chat/completions goes via agent-runner.ts that triggers a flush. because the session file was over 2MB even though my ctx window was small (compactions). after <code>/new</code> no flush was triggered</p>
-<p><strong>CONCLUSION</strong></p>
-<p>this is actually using <strong>2 tools</strong> combination to achieve "full" goal of using a tool to trigger an agent turn and get a reaction and get it via human visible channel</p>
-<p>ACHIEVES GOAL - Agent Turn + Context Aware + Channel Response BUT causes wierd NO_REPLY + compaction flow</p>
-<p>also in wa no perfix rules, in http yes perfix rules ([openclaw] 🦞)</p>
-</div>
-      
-      
-      </pre></div>
+      <div class="source-html">
+        <h1>OpenClaw Communications Paths</h1>
+        <p>GOAL is to understand what tools and how we can use them to communicate with our main agent in our main session and get response</p>
+        <p>MEANING <strong>how can i send a message to my agent for him to act upon</strong></p>
+        <p>TIP - u need to use 2 tools (send/http + message)</p>
+        <p>general rules about this file:</p>
+        <ol>
+        <li>testing with terminal -&gt; whatsapp</li>
+        <li>session = context = conversation history sent to model.</li>
+        <li>testing the session loggin is by asking my agent in wa to <code>write me last 10 messages</code></li>
+        <li>NO session means not logged to our main session in whatsapp</li>
+        </ol>
+        <p><br><br></p>
+        <h1>the use case</h1>
+        <ol>
+        <li>i want a trainer cron that check the time and if its 3-6 pm send me every 30 min a message to jump, look at how many jumps i did yesterday and ask for 1 more</li>
+        <li>i want a security cron that check this server and notify me only if something is important, but act immediately, dont wait for my response</li>
+        </ol>
+        <p>so ye, you can you a heartbeat, but maybe you want a cron? a cron (with System Event) always reply something... </p>
+        <p>so you want something to be done AND conditionaly sent to you AND activate the agent?</p>
+        <h3>solution</h3>
+        <p>this is the workflow:</p>
+        <ol>
+        <li>cron for timing</li>
+        <li>session_send tool for instructions</li>
+        <li>include condition for notification </li>
+        <li>ask to be notified with message tool</li>
+        </ol>
+        <p><br><br></p>
+        <h1>the Message tool</h1>
+        <br>
+        
+        <h2>1. simple cli</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>openclaw message send --channel whatsapp --target +972542634114 --message "send me a sheep emoji and explain why"</code></div>
+        <p><strong>WHATSAPP</strong></p>
+        <p>got <code>send me a cow emoji and explain why</code> message with not follow up</p>
+        <p><strong>SESSION</strong></p>
+        <p>asking agent <code>write me last 10 messages</code> revealed</p>
+        <div class="code-block"><pre><code>9) Assistant: “send me a sheep emoji and explain why”  
+        10) User: “write me last 10 messages”
+        </code></pre></div>
+        <p><strong>CONCLUSION</strong></p>
+        <p>the message tool LOGS the message to the session context, but at <code>Assistant</code> turn, and therefor the Assistant does not replies.</p>
+        <br>
+        
+        <h2>2. simple cli + agent</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>openclaw agent --channel whatsapp --to +972542634114 --message "send me a cow sheep and explain why" </code></div>
+        <p><strong>WHATSAPP</strong></p>
+        <p>nothing</p>
+        <p><strong>SESSION</strong></p>
+        <p>NO (private)</p>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this method just initiates a new session in the terminal, and the agent responds in terminal. not relevant at all.</p>
+        <br>
+        
+        <h2>3. simple cli + agent + deliver</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>openclaw agent --channel whatsapp --to +972542634114 --message "send me a cow emoji and explain why" --deliver</code></div>
+        <p><strong>WHATSAPP</strong></p>
+        <div class="code-block"><code>[openclaw] 🦞 🐄  Because cows are peak chill, steady, and unbothered. Basically the opposite of chaos. 🦞</code></div>
+        <p><strong>SESSION</strong></p>
+        <p>NO (private)</p>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this method initiates a new session in the terminal, and the agent responds in terminal. BUT also send the response to whatsapp but is not even logged to main session, main agent would never know about it.</p>
+        <p><br><br></p>
+        <h1>the Session_Send tool</h1>
+        <br>
+        
+        <h2>1. simple sessions.send (sessions_send)</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>openclaw gateway call sessions.send --params "{\"key\":\"agent:main:whatsapp:direct:+972542634114\",\"message\":\"send me a cow emoji and explain why\"}"</code></div>
+        <p><strong>WHATSAPP</strong></p>
+        <p>nothing</p>
+        <p><strong>SESSION</strong></p>
+        <p>yes, internal</p>
+        <div class="code-block"><pre><code>8) User (cli): “send me a cow emoji and explain why”  
+        9) Assistant: “🐄 Because cows are calm, obvious, and easy to spot...”  
+        10) User: “write me last 10 messages”
+        </code></pre></div>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this does LOG the message to session and even triggers AGENT TURN to answer it, but both are SILENT</p>
+        <p><br><br></p>
+        <h1>the /v1/chat/completions tool</h1>
+        <h2>1. simple /v1/chat/completions</h2>
+        <h3>pre-requisites</h3>
+        <p>simple is over-statement, the /v1/chat/completions tool must be allowed to be used via the settings file (<code>gateway.http.endpoints.chatCompletions.enabled = true</code> Auth must match <code>gateway.auth.mode</code>) and needs a little code to be invoked, so i used <code>3-chat-completions-pinned.sh</code>:</p>
+        <div class="code-block"><pre><code>#!/usr/bin/env bash
+        # Usage:
+        #   ./3-chat-completions-pinned.sh "hi its ariel"
+        # The first argument is sent as the user message content.
+        
+        MSG="${1:-TEST: /v1/chat/completions pinned session}"
+        TOKEN="${OPENCLAW_GATEWAY_TOKEN:-$(python3 - &amp;lt;&amp;lt;'PY'
+        import json; print(json.load(open('/root/.openclaw/openclaw.json')).get('gateway',{}).get('auth',{}).get('token',''))
+        PY
+        )}"
+        PAYLOAD="$(jq -n --arg msg "$MSG" '{model:"openclaw/default",messages:[{role:"user",content:$msg}]}')"
+        curl -sS http://127.0.0.1:18789/v1/chat/completions -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" -H "x-openclaw-session-key: agent:main:whatsapp:direct:+972542634114" -H "x-openclaw-message-channel: whatsapp" -d "$PAYLOAD"
+        </code></pre></div>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>./3-chat-completions-pinned.sh "send me a cow emoji and explain why"</code></div>
+        <p>WITH RESULT:</p>
+        <div class="code-block"><pre><code>{
+          "id": "chatcmpl_9de477ce-c11e-4712-94f9-5b4ded15e12b",
+          "object": "chat.completion",
+          "created": 1776810140,
+          "model": "openclaw/default",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "[openclaw] 🦞 🐄 Because it is a clear, unmistakable marker that this exact instruction was followed in-context. 🦞"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 86834,
+            "completion_tokens": 251,
+            "total_tokens": 87085
+          }
+        }
+        </code></pre></div>
+        <p><strong>WHATSAPP</strong></p>
+        <p>nothing</p>
+        <p><strong>SESSION</strong></p>
+        <div class="code-block"><pre><code>8) User: “send me a cow emoji and explain why”  
+        9) Assistant: “🐄 Because it is a clear, unmistakable marker that this exact instruction was followed in-context.”  
+        10) User: “write me last 10 messages”
+        </code></pre></div>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this does LOG the message to session and even triggers AGENT TURN to answer it, but both are SILENT to the channel but you do get the agent's response via HTTP</p>
+        <p><br><br></p>
+        <h1>the Combined WITH Message tools - Achieve GOAL</h1>
+        <br>
+        
+        <h2>1. sessions.send with instuct for message tool</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>openclaw gateway call sessions.send --params "{\"key\":\"agent:main:whatsapp:direct:+972542634114\",\"message\":\"use message tool to send me via whatsapp a sheep emoji and explain why\"}"</code></div>
+        <p><strong>WHATSAPP</strong></p>
+        <div class="code-block"><code>[openclaw] 🦞 🐑 Because sheep are the perfect contrast to the cow test, still obvious, still unmistakable, and it proves the WhatsApp message-tool path is working end-to-end. 🦞</code></div>
+        <p><strong>SESSION</strong></p>
+        <div class="code-block"><pre><code>8) User (cli): “use message tool to send me via whatsapp a sheep emoji and explain why”  
+        9) Assistant: “🐑 Because sheep are the perfect contrast to the cow test...”  
+        10) User: “write me last 10 messages”
+        </code></pre></div>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this is actually using <strong>2 tools</strong> combination to achieve "full" goal of using a tool to trigger an agent turn and get a reaction and get it via human visible channel</p>
+        <p>ACHIEVES GOAL - Agent Turn + Context Aware + Channel Response (+perfix rules)</p>
+        <br>
+        
+        <h2>2. /v1/chat/completions with instuct for message tool</h2>
+        <p><strong>TERMINAL</strong></p>
+        <div class="code-block"><code>./3-chat-completions-pinned.sh "use message tool to send me via whatsapp a vodka emoji and explain why"</code></div>
+        <p>WITH RESULT:</p>
+        <div class="code-block"><pre><code>{
+          "id": "chatcmpl_9aa32f81-4d83-4db8-b838-f26e88319fff",
+          "object": "chat.completion",
+          "created": 1776811880,
+          "model": "openclaw/default",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "[openclaw] 🦞 🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in."
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 44722,
+            "completion_tokens": 717,
+            "total_tokens": 45439
+          }
+        }
+        </code></pre></div>
+        <p><strong>WHATSAPP</strong></p>
+        <div class="code-block"><code>🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in.</code></div>
+        <p><strong>SESSION</strong></p>
+        <div class="code-block"><pre><code>5) User: “use message tool to send me via whatsapp a vodka emoji and explain why”
+        6) Assistant: “🍸 There isn’t a dedicated vodka emoji, so I used the cocktail glass as the closest universal stand-in.”
+        7) Assistant: “NO_REPLY”
+        8) User: “Pre-compaction memory flush...”
+        9) Assistant: “NO_REPLY”
+        10) User: “System: [2026-04-21 22:50:11 UTC] Compacted ... write me last 10 messages” 
+        </code></pre></div>
+        <p>asking the agent about the <code>why is the NO_REPLY twice and compaction ?</code> it responded :</p>
+        <div class="code-block"><pre><code>1) *NO_REPLY #1*: after I sent your WhatsApp message via the `message` tool, I returned `NO_REPLY` in-session to avoid duplicate replies.
+        2) *NO_REPLY #2*: after your memory-flush instruction, that flow is intentionally silent unless there is something to report.
+        </code></pre></div>
+        <p>which after testing it happened a second time....  i fought back for answers.... so yes, the /v1/chat/completions goes via agent-runner.ts that triggers a flush. because the session file was over 2MB even though my ctx window was small (compactions). after <code>/new</code> no flush was triggered</p>
+        <p><strong>CONCLUSION</strong></p>
+        <p>this is actually using <strong>2 tools</strong> combination to achieve "full" goal of using a tool to trigger an agent turn and get a reaction and get it via human visible channel</p>
+        <p>ACHIEVES GOAL - Agent Turn + Context Aware + Channel Response BUT causes wierd NO_REPLY + compaction flow</p>
+        <p>also in wa no perfix rules, in http yes perfix rules ([openclaw] 🦞)</p>
+      </div>
     </section>
   </div>
-
-  <script>
-  const md = document.getElementById('md').innerHTML;
-  document.getElementById('md').innerHTML = marked.parse(md);
-</script>
 </body>
 </html>
